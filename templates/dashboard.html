@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Learn by Modeling the World</h1>
+      <p>Turn intuition into understanding. This app uses curiosity and challenge to create “space” in the brain for new ideas—then fills it with the next right concept.</p>
+      <div class="hero-cta">
+        <a class="button primary" href="#setup">Get Started</a>
+        <a class="button" href="#philosophy">How it Works</a>
+      </div>
+    </div>
+    <div class="glow"></div>
+  </section>
+
+  <section class="panel" id="setup">
+    <h2 class="title">Your Topic List</h2>
+    <p class="muted">Paste a detailed set of topics, or upload a PDF (AI parsing not implemented yet). We’ll pre-generate a sequence of curiosity prompts from this list.</p>
+
+    <div class="grid two">
+      <div class="card">
+        <label for="topicList" class="label">Paste Topics</label>
+        <textarea id="topicList" class="input textarea" rows="10" placeholder="e.g. Kinematics: displacement, velocity, acceleration; Newton's laws; energy; momentum; ..."></textarea>
+        <div class="row end">
+          <a class="button primary" href="/familiarity">Start</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="label">Upload PDF</label>
+        <div class="upload">
+          <div class="dropzone disabled">
+            <div class="drop-icon">📄</div>
+            <div>
+              <div class="dz-title">Drag & drop a PDF here</div>
+              <div class="muted small">AI parsing coming soon</div>
+            </div>
+          </div>
+          <input type="file" id="pdfUpload" accept="application/pdf" disabled />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="philosophy">
+    <h2 class="title">Learning Philosophy</h2>
+    <div class="grid two">
+      <div class="card soft">
+        <h3 class="subtitle">1) Start with what you know</h3>
+        <p class="muted">We first map familiar ideas. This anchors new knowledge to existing mental models, making learning faster and stickier.</p>
+      </div>
+      <div class="card soft">
+        <h3 class="subtitle">2) Create cognitive “space”</h3>
+        <p class="muted">Curiosity and challenge open a slot for the next idea. Carefully chosen anomalies reveal where your current model bends.</p>
+      </div>
+      <div class="card soft">
+        <h3 class="subtitle">3) Model the world</h3>
+        <p class="muted">You propose a simple model from real observations. Iterative tests and prompts refine it until it explains the topic list.</p>
+      </div>
+      <div class="card soft">
+        <h3 class="subtitle">4) Loop to mastery</h3>
+        <p class="muted">Each loop picks the next right concept, challenges you to derive it, and integrates it into your model—no rote memorization.</p>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

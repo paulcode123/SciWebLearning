@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+  <section class="panel">
+    <h1 class="title">Inquiry & Modeling</h1>
+    <p class="muted">We sequence curiosity prompts from your topic list. Work through them one by one: propose a hypothesis, test it, and refine your model.</p>
+
+    {% set sample_prompts = [
+      'Why does a rolling ball slow down faster on rough surfaces than on smooth ones?',
+      'If you double an object\'s mass but keep velocity constant, what happens to momentum and kinetic energy?',
+      'Why do astronauts float on the ISS even though gravity is still present?',
+      'What determines how fast ice melts in salty vs fresh water?',
+      'Why does adding resistors in parallel lower the total resistance?',
+      'What makes a projectile\'s range maximal at 45° (neglecting air resistance)?',
+      'Why does temperature relate to the average kinetic energy of particles?'
+    ] %}
+
+    <div class="grid two">
+      <aside class="card soft queue">
+        <h3 class="subtitle">Prompt Queue</h3>
+        <div class="muted small" style="margin-bottom:8px;">Pre-generated from your topics. Items you already had ideas on are marked.</div>
+        <ol class="queue-list">
+          {% for p in sample_prompts %}
+            <li class="queue-item {{ 'active' if loop.index == 2 else '' }}">
+              <span class="index">{{ loop.index }}</span>
+              <span class="text">{{ p }}</span>
+              {% if loop.index in [1,4] %}
+                <span class="pill">have an idea</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </aside>
+
+      <div class="stack">
+        <div class="card">
+          <h3 class="subtitle">Current Challenge</h3>
+          <p class="muted" style="margin-bottom:8px;">{{ sample_prompts[1] }}</p>
+          <div class="tip">
+            <strong>Tip:</strong> Try a quick real-world check. Change one variable at a time (mass held constant, vary velocity) and compare momentum vs energy.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="subtitle">Your Hypothesis</h3>
+          <textarea class="input textarea" rows="5" placeholder="State your best-guess rule: what changes, what stays constant, and why."></textarea>
+          <div class="row gap" style="margin-top:8px;">
+            <button class="button">Ask a Hint</button>
+            <button class="button">Test with a Scenario</button>
+            <button class="button primary">Submit</button>
+          </div>
+        </div>
+
+        <div class="thread card soft">
+          <h3 class="subtitle">Discussion</h3>
+          <div class="message from-ai">
+            <p><strong>AI</strong>: Momentum depends linearly on mass; energy depends on velocity squared. Where does that show up in your data?</p>
+          </div>
+          <div class="message from-user">
+            <p><strong>You</strong>: Momentum doubled with mass, but energy didn’t—it stayed the same because velocity was constant.</p>
+          </div>
+          <div class="message from-ai">
+            <p><strong>AI</strong>: Good. What anomaly would you expect if velocity changes instead?</p>
+          </div>
+          <div class="muted small">(In the full version, this loop continues until every prompt is resolved.)</div>
+        </div>
+
+        <div class="row between">
+          <a class="button" href="/familiarity">Back</a>
+          <a class="button primary" href="/">Finish</a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

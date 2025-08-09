@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SciWeb Learning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <header class="topbar">
+      {% set progress = 33 %}
+      {% if request.path == '/familiarity' %}
+        {% set progress = 66 %}
+      {% elif request.path == '/inquiry' %}
+        {% set progress = 100 %}
+      {% endif %}
+      <div class="container">
+        <div class="row between center">
+          <a class="brand" href="/">SciWeb Learning</a>
+          <nav class="steps">
+            <a class="step {{ 'active' if request.path == '/' else '' }}" href="/">
+              <span class="badge">1</span> Dashboard
+            </a>
+            <a class="step {{ 'active' if request.path == '/familiarity' else '' }}" href="/familiarity">
+              <span class="badge">2</span> Familiarity
+            </a>
+            <a class="step {{ 'active' if request.path == '/inquiry' else '' }}" href="/inquiry">
+              <span class="badge">3</span> Inquiry
+            </a>
+          </nav>
+        </div>
+        <div class="progress"><div class="bar" style="width: {{ progress }}%"></div></div>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer container">
+      <p class="muted">Built with Flask. UI-only demo of the learning flow.</p>
+    </footer>
+  </body>
+  </html>
+
+
