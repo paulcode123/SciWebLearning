@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - SciWeb{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to All Projects
+    </a>
+</div>
+
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-book icon"></i>
+        {{ project.title }}
+    </h1>
+    <p class="page-subtitle">{{ project.description }}</p>
+</div>
+
+<div style="margin-bottom: 30px; text-align: center;">
+    <a href="{{ url_for('new_conversation', project_id=project.id) }}" class="btn btn-secondary" style="font-size: 1.1rem; padding: 15px 30px;">
+        <i class="fas fa-plus icon"></i>
+        Start New Conversation
+    </a>
+</div>
+
+{% if project.conversations %}
+<div class="card">
+    <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+        <i class="fas fa-history icon" style="color: #81c784;"></i>
+        Conversation History
+    </h2>
+    
+    <div class="grid grid-2">
+        {% for conversation in project.conversations %}
+        <div class="conversation-card" data-index="{{ loop.index0 }}" style="background: #f0f8f0; border-radius: 10px; padding: 20px; border-left: 4px solid #81c784;">
+            <h3 style="color: #2d5016; margin-bottom: 8px;">
+                <i class="fas fa-comment icon" style="color: #81c784;"></i>
+                {{ conversation.title }}
+            </h3>
+            
+            <div style="margin-bottom: 15px;">
+                <span style="color: #4a7c59; font-size: 0.9rem;">
+                    <i class="fas fa-calendar icon"></i>
+                    {{ conversation.date }}
+                </span>
+                <span style="color: #4a7c59; font-size: 0.9rem; margin-left: 15px;">
+                    <i class="fas fa-comments icon"></i>
+                    {{ conversation.message_count }} messages
+                </span>
+            </div>
+            
+            <a href="{{ url_for('chat_interface', project_id=project.id, conversation_id=conversation.id) }}" class="btn" style="font-size: 0.9rem; padding: 8px 16px;">
+                <i class="fas fa-play icon"></i>
+                Continue Chat
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center;">
+    <i class="fas fa-comment-dots" style="font-size: 3rem; color: #b8e6b8; margin-bottom: 20px;"></i>
+    <h2 style="color: #2d5016; margin-bottom: 15px;">No Conversations Yet</h2>
+    <p style="color: #4a7c59; margin-bottom: 20px;">
+        Start your first conversation to begin exploring {{ project.title }} with AI assistance.
+    </p>
+    <a href="{{ url_for('new_conversation', project_id=project.id) }}" class="btn btn-secondary">
+        <i class="fas fa-rocket icon"></i>
+        Start First Conversation
+    </a>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top: 30px;">
+    <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+        <i class="fas fa-chart-line icon" style="color: #ffb3ba;"></i>
+        Project Progress
+    </h2>
+    
+    <div class="grid grid-3">
+        <div class="progress-stat" data-index="0" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #81c784, #a8e6cf); color: #2d5016; border-radius: 10px;">
+            <i class="fas fa-comments stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <h3 class="stat-number" data-target="{{ project.conversations|length }}" style="font-size: 2rem; margin-bottom: 5px;">0</h3>
+            <p>Total Conversations</p>
+        </div>
+        
+        <div class="progress-stat" data-index="1" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #ffb3ba, #ffdfba); color: #8b4513; border-radius: 10px;">
+            <i class="fas fa-calendar stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <h3 style="font-size: 2rem; margin-bottom: 5px;">{{ project.created_date }}</h3>
+            <p>Start Date</p>
+        </div>
+        
+        <div class="progress-stat" data-index="2" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #c8f7c5, #e8f5e8); color: #2d5016; border-radius: 10px;">
+            <i class="fas fa-trophy stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <h3 style="font-size: 2rem; margin-bottom: 5px;">Coming Soon</h3>
+            <p>Progress Tracking</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate conversation cards with staggered entrance
+    const conversationCards = document.querySelectorAll('.conversation-card');
+    conversationCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-30px)';
+        card.style.animation = `slideInLeft 0.6s ease-out ${0.1 * index + 0.4}s both`;
+    });
+    
+    // Animate progress stats with counter effect
+    const progressStats = document.querySelectorAll('.progress-stat');
+    progressStats.forEach((stat, index) => {
+        stat.style.opacity = '0';
+        stat.style.transform = 'translateY(30px) scale(0.9)';
+        stat.style.animation = `fadeInUp 0.8s ease-out ${0.2 * index + 0.6}s both`;
+        
+        // Counter animation for numbers
+        const numberElement = stat.querySelector('.stat-number');
+        if (numberElement && numberElement.dataset.target) {
+            const target = parseInt(numberElement.dataset.target);
+            setTimeout(() => {
+                animateCounter(numberElement, 0, target, 1000);
+            }, (0.2 * index + 0.8) * 1000);
+        }
+    });
+    
+    // Animate stat icons
+    const statIcons = document.querySelectorAll('.stat-icon');
+    statIcons.forEach(icon => {
+        icon.addEventListener('mouseenter', function() {
+            this.style.animation = 'breathe 1.5s ease-in-out infinite';
+        });
+        
+        icon.addEventListener('mouseleave', function() {
+            this.style.animation = '';
+        });
+    });
+    
+    // Enhanced hover effects for conversation cards
+    conversationCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(10px) scale(1.02)';
+            this.style.boxShadow = '0 10px 30px rgba(129, 199, 132, 0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Pulse animation for New Conversation button
+    const newConversationBtn = document.querySelector('.btn-secondary');
+    if (newConversationBtn) {
+        setInterval(() => {
+            newConversationBtn.style.animation = 'pulseGlow 2s ease-in-out';
+            setTimeout(() => {
+                newConversationBtn.style.animation = '';
+            }, 2000);
+        }, 6000);
+    }
+});
+
+function animateCounter(element, start, end, duration) {
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        element.textContent = Math.round(current);
+        
+        if (current >= end) {
+            element.textContent = end;
+            clearInterval(timer);
+        }
+    }, 16);
+}
+</script>
+{% endblock %}

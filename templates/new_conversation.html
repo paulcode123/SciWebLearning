@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}New Conversation - {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Project
+    </a>
+</div>
+
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-magic icon"></i>
+        Configure Your Learning Conversation
+    </h1>
+    <p class="page-subtitle">Customize your AI learning experience for {{ project.title }}</p>
+</div>
+
+<form id="conversationForm" style="max-width: 800px; margin: 0 auto;">
+    <!-- Learning Goal & Objective -->
+    <div class="card">
+        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-bullseye icon" style="color: #81c784;"></i>
+            Learning Context
+        </h2>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px;">
+                <i class="fas fa-target icon"></i>
+                Broader Learning Goal
+            </label>
+            <input type="text" value="{{ project.title }}" readonly 
+                   style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px; background: #f0f8f0; color: #4a7c59;">
+        </div>
+        
+        <div>
+            <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px;">
+                <i class="fas fa-crosshairs icon"></i>
+                Specific Objective for This Conversation
+            </label>
+            <textarea name="objective" rows="3" placeholder="What specific topic or skill do you want to focus on in this conversation?"
+                      style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px; resize: vertical;" required></textarea>
+        </div>
+    </div>
+
+    <!-- Learning Preferences -->
+    <div class="card">
+        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-user-cog icon" style="color: #ffb3ba;"></i>
+            Your Learning Preferences
+        </h2>
+        
+        <div class="grid grid-2">
+            {% for pref_key, options in learning_preferences.items() %}
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px; text-transform: capitalize;">
+                    {{ pref_key.replace('_', ' ') }}
+                </label>
+                <select name="{{ pref_key }}" style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px;">
+                    {% for option in options %}
+                    <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Conversation Style -->
+    <div class="card">
+        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-theater-masks icon" style="color: #b8e6b8;"></i>
+            Interaction Style
+        </h2>
+        
+        {% for category, styles in conversation_styles.items() %}
+        <div style="margin-bottom: 25px;">
+            <h3 style="color: #81c784; margin-bottom: 15px; font-size: 1.1rem;">
+                {{ category }}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                {% for style in styles %}
+                <label style="display: flex; align-items: center; padding: 12px; background: #f0f8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;">
+                    <input type="radio" name="conversation_style" value="{{ style }}" 
+                           style="margin-right: 10px;" required
+                           onchange="updateStyleSelection(this)">
+                    <span style="font-weight: 500;">{{ style }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- AI Model Selection -->
+    <div class="card">
+        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-robot icon" style="color: #66bb6a;"></i>
+            AI Model Selection
+        </h2>
+        
+        {% for provider, models in ai_models.items() %}
+        <div style="margin-bottom: 25px;">
+            <h3 style="color: #66bb6a; margin-bottom: 15px; font-size: 1.1rem; text-transform: capitalize;">
+                {{ provider }}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                {% for model in models %}
+                <label style="display: flex; align-items: center; padding: 15px; background: #f0f8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;">
+                    <input type="radio" name="ai_model" value="{{ model.id }}" 
+                           style="margin-right: 10px;" required
+                           onchange="updateModelSelection(this)">
+                    <div>
+                        <div style="font-weight: 600;">{{ model.name }}</div>
+                        <div style="font-size: 0.8rem; color: #4a7c59;">{{ model.provider }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Conversation History Summary -->
+    <div class="card">
+        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-history icon" style="color: #a8e6cf;"></i>
+            Conversation History Context
+        </h2>
+        
+        {% if project.conversations %}
+        <div style="background: #f0f8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <p style="color: #4a7c59; margin-bottom: 10px;">
+                <strong>Previous conversations in this project:</strong>
+            </p>
+            {% for conv in project.conversations %}
+            <span class="badge" style="background: linear-gradient(45deg, #a8e6cf, #c8f7c5);">
+                {{ conv.title }}
+            </span>
+            {% endfor %}
+        </div>
+        <p style="color: #4a7c59; font-size: 0.9rem;">
+            <i class="fas fa-info-circle icon"></i>
+            The AI will have context from your previous conversations to provide continuity in your learning journey.
+        </p>
+        {% else %}
+        <div style="text-align: center; padding: 20px; background: #f0f8f0; border-radius: 8px;">
+            <i class="fas fa-star" style="color: #ffdfba; font-size: 2rem; margin-bottom: 10px;"></i>
+            <p style="color: #4a7c59;">This will be your first conversation in this project!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Submit Button -->
+    <div style="text-align: center; margin-top: 30px;">
+        <button type="submit" class="btn" style="font-size: 1.2rem; padding: 15px 40px;">
+            <i class="fas fa-rocket icon"></i>
+            Start Learning Conversation
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateStyleSelection(radio) {
+    // Remove selection styling from all labels
+    document.querySelectorAll('input[name="conversation_style"]').forEach(input => {
+        input.parentElement.style.background = '#f0f8f0';
+        input.parentElement.style.borderColor = 'transparent';
+        input.parentElement.style.color = '#333';
+    });
+    
+    // Add selection styling to selected label
+    radio.parentElement.style.background = 'linear-gradient(135deg, #81c784, #a8e6cf)';
+    radio.parentElement.style.color = '#2d5016';
+    radio.parentElement.style.borderColor = '#81c784';
+}
+
+function updateModelSelection(radio) {
+    // Remove selection styling from all labels
+    document.querySelectorAll('input[name="ai_model"]').forEach(input => {
+        input.parentElement.style.background = '#f0f8f0';
+        input.parentElement.style.borderColor = 'transparent';
+        input.parentElement.style.color = '#333';
+    });
+    
+    // Add selection styling to selected label
+    radio.parentElement.style.background = 'linear-gradient(135deg, #66bb6a, #81c784)';
+    radio.parentElement.style.color = '#2d5016';
+    radio.parentElement.style.borderColor = '#66bb6a';
+}
+
+document.getElementById('conversationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const conversationConfig = Object.fromEntries(formData.entries());
+    
+    // In a real implementation, this would save the configuration and start the conversation
+    console.log('Conversation Configuration:', conversationConfig);
+    
+    // For now, redirect to a mock conversation
+    const newConversationId = Math.floor(Math.random() * 1000) + 100;
+    // Show loading animation
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin icon"></i>Preparing Conversation...';
+    submitBtn.disabled = true;
+    
+    // Simulate AI processing time
+    setTimeout(() => {
+        window.location.href = `/project/{{ project.id }}/conversation/${newConversationId}`;
+    }, 2000);
+});
+
+// Enhanced form animations
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate form sections with staggered entrance
+    const formSections = document.querySelectorAll('.card');
+    formSections.forEach((section, index) => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(40px)';
+        section.style.animation = `fadeInUp 0.8s ease-out ${0.15 * index + 0.3}s both`;
+    });
+    
+    // Intelligent form field focus animations
+    const inputs = document.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.transform = 'scale(1.02)';
+            this.style.boxShadow = '0 0 0 3px rgba(129, 199, 132, 0.2)';
+            this.parentElement.style.transform = 'translateY(-2px)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+            this.parentElement.style.transform = '';
+        });
+    });
+    
+    // Animate conversation style categories
+    const categories = document.querySelectorAll('h3');
+    categories.forEach(category => {
+        category.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(10px)';
+            this.style.textShadow = '2px 2px 4px rgba(129, 199, 132, 0.3)';
+        });
+        
+        category.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.textShadow = '';
+        });
+    });
+    
+    // Progressive form revelation
+    let currentSection = 0;
+    const sections = document.querySelectorAll('.card');
+    
+    function revealNextSection() {
+        if (currentSection < sections.length - 1) {
+            currentSection++;
+            sections[currentSection].style.animation = 'fadeInUp 0.6s ease-out both';
+        }
+    }
+    
+    // Auto-reveal sections as user progresses
+    inputs.forEach((input, index) => {
+        input.addEventListener('change', function() {
+            setTimeout(revealNextSection, 300);
+        });
+    });
+    
+    // Smart button state management
+    const submitButton = document.querySelector('button[type="submit"]');
+    function updateSubmitButton() {
+        const requiredFields = document.querySelectorAll('input[required], textarea[required]');
+        const allFilled = Array.from(requiredFields).every(field => field.value.trim() !== '');
+        
+        if (allFilled) {
+            submitButton.style.animation = 'pulseGlow 2s ease-in-out infinite';
+            submitButton.style.transform = 'scale(1.05)';
+        } else {
+            submitButton.style.animation = '';
+            submitButton.style.transform = '';
+        }
+    }
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', updateSubmitButton);
+        input.addEventListener('change', updateSubmitButton);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}{{ conversation.title }} - {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Project
+    </a>
+</div>
+
+<div class="page-header" style="margin-bottom: 20px;">
+    <h1 class="page-title" style="font-size: 2rem;">
+        <i class="fas fa-comments icon"></i>
+        {{ conversation.title }}
+    </h1>
+    <p class="page-subtitle">Learning conversation in {{ project.title }}</p>
+</div>
+
+<div style="display: flex; flex-direction: column; height: calc(100vh - 200px); max-height: 600px;">
+    <!-- Chat Messages Container -->
+    <div id="chatMessages" style="flex: 1; background: rgba(255, 255, 255, 0.9); border-radius: 15px 15px 0 0; padding: 20px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3);">
+        <!-- Welcome Message -->
+        <div class="message ai-message" style="margin-bottom: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #81c784, #a8e6cf); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-robot" style="color: #2d5016; font-size: 1.2rem;"></i>
+                </div>
+                <div style="background: #f0f8f0; padding: 15px 20px; border-radius: 15px; max-width: 80%; border-top-left-radius: 5px;">
+                    {% if outline_mode %}
+                    <p style="margin: 0; color: #2d5016; line-height: 1.5;">
+                        Let's outline your learning project. Tell me what you want to learn, any resources to include, whether you prefer surveying existing knowledge or starting from scratch, and if you want deep mastery or a broad overview.
+                    </p>
+                    {% else %}
+                    <p style="margin: 0; color: #2d5016; line-height: 1.5;">
+                        Hello! I'm your AI learning assistant. I'm here to help you explore <strong>{{ project.title }}</strong> through our conversation about <strong>{{ conversation.title }}</strong>.
+                        <br><br>
+                        I have context about your learning preferences and conversation history to provide you with a personalized learning experience. What would you like to start with?
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Input Container -->
+    <div style="background: rgba(255, 255, 255, 0.9); border-radius: 0 0 15px 15px; padding: 20px; border: 1px solid rgba(168, 230, 207, 0.3); border-top: none;">
+        <form id="chatForm" style="display: flex; gap: 15px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <textarea id="messageInput" 
+                         placeholder="Type your message or question here..."
+                         rows="3"
+                         style="width: 100%; padding: 15px; border: 2px solid #c8f7c5; border-radius: 12px; resize: none; font-size: 1rem; line-height: 1.4;"
+                         onkeydown="handleKeyDown(event)"></textarea>
+            </div>
+            <button type="submit" class="btn" style="padding: 15px 20px; height: fit-content;">
+                <i class="fas fa-paper-plane icon"></i>
+                Send
+            </button>
+            {% if outline_mode %}
+            <button type="button" class="btn btn-secondary" id="finishOutlineBtn" style="padding: 15px 20px; height: fit-content;">
+                <i class="fas fa-flag-checkered icon"></i>
+                Finish Outline
+            </button>
+            {% endif %}
+        </form>
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="quick-action-btn" onclick="sendQuickMessage('Can you explain this concept step by step?')">
+                <i class="fas fa-list-ol icon"></i>
+                Step-by-step
+            </button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('Can you give me a practical example?')">
+                <i class="fas fa-lightbulb icon"></i>
+                Example
+            </button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('I need help with a specific problem')">
+                <i class="fas fa-question-circle icon"></i>
+                Problem Help
+            </button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('Can you test my understanding?')">
+                <i class="fas fa-brain icon"></i>
+                Quiz Me
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if outline_mode %}
+<!-- Finish Outline Modal -->
+<div id="finishOutlineModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="max-width: 520px; width: 100%; position: relative; z-index: 1001;">
+        <h2 style="color: #2d5016; margin-bottom: 10px;">Save Project</h2>
+        <p style="color: #4a7c59; margin-bottom: 15px;">Confirm your project details.</p>
+        <div style="display: grid; gap: 12px;">
+            <div>
+                <label for="outlineTopic" style="display:block; color:#2d5016; font-weight:600; margin-bottom:6px;">Project topic</label>
+                <input id="outlineTopic" type="text" style="width:100%; padding: 10px 12px; border: 2px solid #c8f7c5; border-radius: 10px;" placeholder="e.g., Deep Learning for Vision">
+            </div>
+            <div>
+                <label for="outlineDesc" style="display:block; color:#2d5016; font-weight:600; margin-bottom:6px;">Short description (optional)</label>
+                <textarea id="outlineDesc" rows="3" style="width:100%; padding: 10px 12px; border: 2px solid #c8f7c5; border-radius: 10px;" placeholder="One sentence about this project"></textarea>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 16px; justify-content: flex-end;">
+            <button class="btn" id="confirmSaveOutlineBtn"><i class="fas fa-save icon"></i>Save</button>
+            <button class="btn btn-secondary" id="cancelSaveOutlineBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Enhanced loading indicator -->
+<div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
+    <div class="message ai-message">
+        <div style="display: flex; align-items: flex-start; gap: 15px;">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #81c784, #a8e6cf); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: aiThinking 2s ease-in-out infinite;">
+                <i class="fas fa-robot" style="color: #2d5016; font-size: 1.2rem;"></i>
+            </div>
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message {
+    margin-bottom: 20px;
+    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes typingDots {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes aiThinking {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 15px;
+    background: #f0f8f0;
+    border-radius: 15px;
+    border-top-left-radius: 5px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #81c784;
+    border-radius: 50%;
+    animation: typingDots 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.user-message {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.ai-message {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.quick-action-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #c8f7c5;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    color: #81c784;
+    font-weight: 500;
+}
+
+.quick-action-btn:hover {
+    background: linear-gradient(135deg, #81c784, #a8e6cf);
+    color: #2d5016;
+    border-color: #81c784;
+    transform: translateY(-2px);
+}
+
+#messageInput:focus {
+    border-color: #81c784;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const OUTLINE_MODE = {{ 'true' if outline_mode else 'false' }};
+let isWaitingForResponse = false;
+let lastUserMessage = '';
+
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+    }
+}
+
+function sendQuickMessage(message) {
+    if (isWaitingForResponse) return;
+    
+    document.getElementById('messageInput').value = message;
+    document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+}
+
+function addMessage(content, isUser = false) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+    
+    const avatarColor = isUser ? 'linear-gradient(135deg, #ffb3ba, #ffdfba)' : 'linear-gradient(135deg, #81c784, #a8e6cf)';
+    const avatarIcon = isUser ? 'fas fa-user' : 'fas fa-robot';
+    const messageAlign = isUser ? 'flex-end' : 'flex-start';
+    const bubbleAlign = isUser ? 'border-top-right-radius: 5px' : 'border-top-left-radius: 5px';
+    const avatarIconColor = isUser ? '#8b4513' : '#2d5016';
+    
+    // Initial state for animation
+    messageDiv.style.opacity = '0';
+    messageDiv.style.transform = 'translateY(30px) scale(0.95)';
+    
+    messageDiv.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: 15px; justify-content: ${messageAlign}; ${isUser ? 'flex-direction: row-reverse;' : ''}">
+            <div style="width: 40px; height: 40px; background: ${avatarColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="${avatarIcon}" style="color: ${avatarIconColor}; font-size: 1.2rem;"></i>
+            </div>
+            <div class="message-bubble" style="background: ${isUser ? 'linear-gradient(135deg, #ffb3ba, #ffdfba)' : '#f0f8f0'}; color: ${isUser ? '#8b4513' : '#2d5016'}; padding: 15px 20px; border-radius: 15px; max-width: 80%; ${bubbleAlign}">
+                <p style="margin: 0; line-height: 1.5;">${content}</p>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        messageDiv.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        messageDiv.style.opacity = '1';
+        messageDiv.style.transform = 'translateY(0) scale(1)';
+    });
+    
+    // Smooth scroll with animation
+    setTimeout(() => {
+        messagesContainer.scrollTo({
+            top: messagesContainer.scrollHeight,
+            behavior: 'smooth'
+        });
+    }, 100);
+    
+    // Add typewriter effect for AI messages
+    if (!isUser) {
+        setTimeout(() => {
+            typewriterEffect(messageDiv.querySelector('.message-bubble p'), content);
+        }, 200);
+    }
+}
+
+function typewriterEffect(element, text) {
+    element.innerHTML = '';
+    let i = 0;
+    const speed = 30; // milliseconds per character
+    
+    function typeChar() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(typeChar, speed);
+        }
+    }
+    
+    typeChar();
+}
+
+document.getElementById('chatForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (isWaitingForResponse) return;
+    
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message
+    addMessage(message, true);
+    messageInput.value = '';
+    lastUserMessage = message;
+    
+    // Show loading indicator
+    isWaitingForResponse = true;
+    document.getElementById('loadingIndicator').style.display = 'block';
+    
+    try {
+        const response = await axios.post('/api/send-message', {
+            message: message,
+            project_id: {{ project.id }},
+            conversation_id: {{ conversation.id }},
+            outline_mode: OUTLINE_MODE
+        });
+        
+        // Add AI response
+        addMessage(response.data.response, false);
+    } catch (error) {
+        console.error('Error sending message:', error);
+        addMessage('Sorry, I encountered an error. Please try again.', false);
+    } finally {
+        // Hide loading indicator
+        isWaitingForResponse = false;
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
+});
+
+// Enhanced page load animations
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate chat container entrance
+    const chatContainer = document.querySelector('div[style*="display: flex; flex-direction: column"]');
+    chatContainer.style.opacity = '0';
+    chatContainer.style.transform = 'translateY(20px)';
+    chatContainer.style.animation = 'fadeInUp 0.8s ease-out 0.2s both';
+    
+    // Animate welcome message
+    const welcomeMessage = document.querySelector('.ai-message');
+    if (welcomeMessage) {
+        welcomeMessage.style.animation = 'slideIn 1s ease-out 0.5s both';
+    }
+    
+    // Animate quick action buttons with stagger
+    const quickButtons = document.querySelectorAll('.quick-action-btn');
+    quickButtons.forEach((btn, index) => {
+        btn.style.opacity = '0';
+        btn.style.transform = 'translateY(20px)';
+        btn.style.animation = `fadeInUp 0.5s ease-out ${0.1 * index + 0.8}s both`;
+    });
+    
+    // Focus with animation
+    setTimeout(() => {
+        const messageInput = document.getElementById('messageInput');
+        messageInput.focus();
+        messageInput.style.animation = 'pulseGlow 2s ease-in-out';
+    }, 1200);
+    
+    // Add input field intelligence
+    const messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('input', function() {
+        if (this.value.length > 0) {
+            this.style.borderColor = '#81c784';
+            this.style.boxShadow = '0 0 0 3px rgba(129, 199, 132, 0.2)';
+        } else {
+            this.style.borderColor = '#c8f7c5';
+            this.style.boxShadow = '';
+        }
+    });
+    
+    // Enhanced quick button interactions
+    quickButtons.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px) scale(1.05)';
+            this.style.boxShadow = '0 8px 25px rgba(129, 199, 132, 0.3)';
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '';
+        });
+        
+        btn.addEventListener('click', function() {
+            this.style.animation = 'pulseGlow 0.6s ease-out';
+            setTimeout(() => {
+                this.style.animation = '';
+            }, 600);
+        });
+    });
+
+    if (OUTLINE_MODE) {
+        const finishBtn = document.getElementById('finishOutlineBtn');
+        const modal = document.getElementById('finishOutlineModal');
+        const inputTopic = document.getElementById('outlineTopic');
+        const inputDesc = document.getElementById('outlineDesc');
+        const confirmBtn = document.getElementById('confirmSaveOutlineBtn');
+        const cancelBtn = document.getElementById('cancelSaveOutlineBtn');
+
+        function openFinishModal() {
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const card = modal.querySelector('.card');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                requestAnimationFrame(() => {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                });
+            }
+            // Prefill topic
+            if (inputTopic && !inputTopic.value) {
+                inputTopic.value = lastUserMessage || 'New Learning Project';
+            }
+        }
+
+        function closeFinishModal() {
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        if (finishBtn) finishBtn.addEventListener('click', openFinishModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeFinishModal);
+        if (modal) modal.addEventListener('click', function(e){ if (e.target === modal) closeFinishModal(); });
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async function(){
+                const topic = (inputTopic && inputTopic.value.trim()) || 'New Learning Project';
+                const description = (inputDesc && inputDesc.value.trim()) || '';
+                try {
+                    const res = await axios.post('/api/create-project-from-outline', { topic, description });
+                    const redirectUrl = res.data && res.data.redirect_url;
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        closeFinishModal();
+                    }
+                } catch (e) {
+                    console.error('Failed to create project from outline', e);
+                    closeFinishModal();
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SciWeb Style Options</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .style-option {
+            border: 3px solid transparent;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .style-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #007bff;
+        }
+        .style-header {
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .style-preview {
+            padding: 20px;
+            background: white;
+            min-height: 200px;
+        }
+        .preview-card {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .preview-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .style-description {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        /* Style 1: Minimal Clean */
+        .minimal .style-header { background: linear-gradient(135deg, #6c757d, #495057); }
+        .minimal .preview-card { background: #f8f9fa; border-left: 3px solid #6c757d; }
+        .minimal .preview-btn { background: #6c757d; color: white; }
+        
+        /* Style 2: Soft Pastels */
+        .pastel .style-header { background: linear-gradient(135deg, #a8e6cf, #dcedc1); color: #333; }
+        .pastel .preview-card { background: #f0f8f0; border-left: 3px solid #a8e6cf; }
+        .pastel .preview-btn { background: #a8e6cf; color: #333; }
+        
+        /* Style 3: Dark Mode */
+        .dark .style-header { background: linear-gradient(135deg, #2c3e50, #34495e); }
+        .dark .style-preview { background: #2c3e50; color: #ecf0f1; }
+        .dark .preview-card { background: #34495e; color: #ecf0f1; border-left: 3px solid #3498db; }
+        .dark .preview-btn { background: #3498db; color: white; }
+        .dark .style-description { background: #34495e; color: #bdc3c7; }
+        
+        /* Style 4: Warm Earth */
+        .earth .style-header { background: linear-gradient(135deg, #8d6e63, #5d4037); }
+        .earth .preview-card { background: #efebe9; border-left: 3px solid #8d6e63; }
+        .earth .preview-btn { background: #8d6e63; color: white; }
+        
+        /* Style 5: Ocean Blue */
+        .ocean .style-header { background: linear-gradient(135deg, #0277bd, #01579b); }
+        .ocean .preview-card { background: #e3f2fd; border-left: 3px solid #0277bd; }
+        .ocean .preview-btn { background: #0277bd; color: white; }
+        
+        /* Style 6: Monochrome */
+        .mono .style-header { background: linear-gradient(135deg, #424242, #212121); }
+        .mono .preview-card { background: #fafafa; border-left: 3px solid #424242; }
+        .mono .preview-btn { background: #424242; color: white; }
+        
+        .select-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .select-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Choose Your SciWeb Style</h1>
+        
+        <div class="style-grid">
+            <!-- Option 1: Minimal Clean -->
+            <div class="style-option minimal">
+                <div class="style-header">Minimal Clean</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; color: #666;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0; color: #333;">New Conversation</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">Clean, distraction-free interface</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Subtle grays and whites with minimal contrast. Focus on content over visual effects. Clean typography and plenty of whitespace for a professional, academic feel.
+                </div>
+                <button class="select-btn" onclick="selectStyle('minimal')">Select Minimal Clean</button>
+            </div>
+
+            <!-- Option 2: Soft Pastels -->
+            <div class="style-option pastel">
+                <div class="style-header">Soft Pastels</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; color: #666;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0; color: #333;">New Conversation</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">Gentle, calming colors</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Soft greens, light blues, and cream tones. Gentle on the eyes with a calming, nature-inspired palette. Perfect for long study sessions.
+                </div>
+                <button class="select-btn" onclick="selectStyle('pastel')">Select Soft Pastels</button>
+            </div>
+
+            <!-- Option 3: Dark Mode -->
+            <div class="style-option dark">
+                <div class="style-header">Dark Mode</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; opacity: 0.8;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0;">New Conversation</h4>
+                        <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Easy on the eyes</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Dark backgrounds with light text. Reduces eye strain and looks modern. Blue accents for interactive elements.
+                </div>
+                <button class="select-btn" onclick="selectStyle('dark')">Select Dark Mode</button>
+            </div>
+
+            <!-- Option 4: Warm Earth -->
+            <div class="style-option earth">
+                <div class="style-header">Warm Earth</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; color: #666;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0; color: #333;">New Conversation</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">Cozy and inviting</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Warm browns, tans, and cream colors. Creates a cozy, library-like atmosphere. Natural and comfortable for extended learning.
+                </div>
+                <button class="select-btn" onclick="selectStyle('earth')">Select Warm Earth</button>
+            </div>
+
+            <!-- Option 5: Ocean Blue -->
+            <div class="style-option ocean">
+                <div class="style-header">Ocean Blue</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; color: #666;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0; color: #333;">New Conversation</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">Fresh and focused</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Various shades of blue with white backgrounds. Professional and trustworthy. Promotes focus and concentration.
+                </div>
+                <button class="select-btn" onclick="selectStyle('ocean')">Select Ocean Blue</button>
+            </div>
+
+            <!-- Option 6: Monochrome -->
+            <div class="style-option mono">
+                <div class="style-header">Monochrome</div>
+                <div class="style-preview">
+                    <div class="preview-card">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Master Python Programming</h3>
+                        <p style="margin: 0 0 15px 0; color: #666;">Learn Python from basics to advanced concepts</p>
+                        <button class="preview-btn">Enter Project</button>
+                    </div>
+                    <div class="preview-card">
+                        <h4 style="margin: 0 0 8px 0; color: #333;">New Conversation</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">Timeless elegance</p>
+                    </div>
+                </div>
+                <div class="style-description">
+                    Pure black, white, and grays only. Timeless and elegant. Maximum readability and zero distractions.
+                </div>
+                <button class="select-btn" onclick="selectStyle('mono')">Select Monochrome</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: white; border-radius: 10px;">
+            <h3>Can't decide?</h3>
+            <p style="color: #666; margin-bottom: 20px;">Tell me which style appeals to you most, or if you'd like me to create a custom variation!</p>
+            <button class="select-btn" style="max-width: 300px; margin: 0 auto;" onclick="alert('Just let me know which style number you prefer, or describe what you\'d like!')">
+                I'll Tell You My Preference
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function selectStyle(styleName) {
+            alert(`Great choice! Let me know you want the "${styleName}" style and I'll implement it for your SciWeb application.`);
+        }
+    </script>
+</body>
+</html>
