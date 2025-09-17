@@ -10,17 +10,17 @@
     </a>
 </div>
 
-<div class="page-header" style="margin-bottom: 20px;">
+<div class="page-header" style="margin-bottom: 20px; text-align: center;">
     <h1 class="page-title" style="font-size: 2rem;">
         <i class="fas fa-comments icon"></i>
         {{ conversation.title }}
     </h1>
-    <p class="page-subtitle">Learning conversation in {{ project.title }}</p>
+    <p class="page-subtitle" style="max-width: 760px; margin: 0 auto;">Learning conversation in {{ project.title }}</p>
 </div>
 
-<div style="display: flex; flex-direction: column; height: calc(100vh - 200px); max-height: 600px;">
+<div style="display: flex; flex-direction: column; height: calc(100vh - 180px); max-height: 680px;">
     <!-- Chat Messages Container -->
-    <div id="chatMessages" style="flex: 1; background: rgba(255, 255, 255, 0.9); border-radius: 15px 15px 0 0; padding: 20px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3);">
+    <div id="chatMessages" style="flex: 1; background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(245,255,245,0.96)); border-radius: 16px 16px 0 0; padding: 22px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3);">
         <!-- Welcome Message -->
         <div class="message ai-message" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: flex-start; gap: 15px;">
@@ -45,7 +45,7 @@
     </div>
 
     <!-- Chat Input Container -->
-    <div style="background: rgba(255, 255, 255, 0.9); border-radius: 0 0 15px 15px; padding: 20px; border: 1px solid rgba(168, 230, 207, 0.3); border-top: none;">
+    <div style="background: rgba(255, 255, 255, 0.94); border-radius: 0 0 16px 16px; padding: 20px; border: 1px solid rgba(168, 230, 207, 0.3); border-top: none;">
         <form id="chatForm" style="display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 1;">
                 <textarea id="messageInput" 
@@ -230,6 +230,7 @@
 {% block scripts %}
 <script>
 const OUTLINE_MODE = {{ 'true' if outline_mode else 'false' }};
+const INITIAL_MESSAGES = {{ messages_json | default('[]') | safe }};
 let isWaitingForResponse = false;
 let lastUserMessage = '';
 
@@ -468,6 +469,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    }
+
+    // Load existing messages
+    if (Array.isArray(INITIAL_MESSAGES) && INITIAL_MESSAGES.length > 0) {
+        INITIAL_MESSAGES.forEach(m => addMessage(m.content, m.role === 'user'));
     }
 });
 </script>

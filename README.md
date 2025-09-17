@@ -18,7 +18,19 @@ SciWeb is a personalized AI-powered learning platform that creates dynamic conve
    pip install -r requirements.txt
    ```
 
-2. **Run the Application**
+2. **Configure Environment**
+   - Create a `.env` file (optional) or set environment variables:
+     - `FLASK_ENV=development`
+     - `SECRET_KEY=change-me`
+     - `DATABASE_URL=sqlite:///sciweb.db` (or your Postgres URL)
+     - `OPENAI_API_KEY=sk-...`
+
+3. **Run Database Migrations**
+   ```bash
+   flask db init && flask db migrate -m "init" && flask db upgrade
+   ```
+
+4. **Run the Application**
    ```bash
    python app.py
    ```
@@ -78,7 +90,10 @@ This is a **skeleton implementation** with:
 - ✅ Conversation style selection
 - ✅ AI model options
 - ✅ Mock data and placeholder responses
-- 🔄 **Next Steps**: Real AI API integration, user authentication, data persistence
+- ✅ DB models, auth, persistence
+- ✅ OpenAI provider abstraction (env-based)
+- ✅ Knowledge graph extraction and visualization
+- 🔄 **Next Steps**: Group learning rooms, achievements, AR/VR hooks
 
 ## Conversation Styles Available
 

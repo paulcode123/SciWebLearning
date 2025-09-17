@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Not Found - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align:center;">
+    <h1 class="page-title"><i class="fas fa-compass icon"></i> Page Not Found</h1>
+    <p class="page-subtitle">We couldn't find what you were looking for.</p>
+</div>
+
+<div class="card" style="text-align:center;">
+    <p style="color: var(--text-secondary); margin-bottom:16px;">Try returning to your dashboard.</p>
+    <a class="btn" href="{{ url_for('dashboard') }}"><i class="fas fa-home icon"></i> Go to Dashboard</a>
+    <a class="btn btn-secondary" href="{{ url_for('style') }}" style="margin-left:8px;"><i class="fas fa-palette icon"></i> Styles</a>
+    </div>
+{% endblock %}
+

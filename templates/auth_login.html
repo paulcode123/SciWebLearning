@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Login - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align:center;">
+    <h1 class="page-title"><i class="fas fa-right-to-bracket icon"></i> Login</h1>
+    <p class="page-subtitle">Welcome back</p>
+    <div style="text-align:center; margin-top:10px; color:#b33;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+<form method="POST" style="max-width: 460px; margin: 0 auto;">
+    <div class="card" style="background-image: linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)), radial-gradient(600px 240px at 20% 30%, rgba(168,230,207,0.35), transparent 60%); background-clip: padding-box, border-box;">
+        <label style="display:block; margin-bottom:6px; color:#2d5016; font-weight:600;">Email</label>
+        <input name="email" type="email" required style="width:100%; padding:12px; border:2px solid #c8f7c5; border-radius:8px; margin-bottom:12px;">
+
+        <label style="display:block; margin-bottom:6px; color:#2d5016; font-weight:600;">Password</label>
+        <input name="password" type="password" required style="width:100%; padding:12px; border:2px solid #c8f7c5; border-radius:8px;">
+    </div>
+
+    <div style="text-align:center;">
+        <button class="btn" type="submit" style="padding:12px 26px;"><i class="fas fa-arrow-right-to-bracket icon"></i> Login</button>
+        <a class="btn btn-secondary" href="{{ url_for('register') }}" style="margin-left:10px;">Create account</a>
+    </div>
+</form>
+{% endblock %}
+

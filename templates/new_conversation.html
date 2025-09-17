@@ -10,12 +10,12 @@
     </a>
 </div>
 
-<div class="page-header">
+<div class="page-header" style="text-align: center;">
     <h1 class="page-title">
         <i class="fas fa-magic icon"></i>
         Configure Your Learning Conversation
     </h1>
-    <p class="page-subtitle">Customize your AI learning experience for {{ project.title }}</p>
+    <p class="page-subtitle" style="max-width: 780px; margin: 0 auto;">Customize your AI learning experience for {{ project.title }}</p>
 </div>
 
 <form id="conversationForm" style="max-width: 800px; margin: 0 auto;">
@@ -193,26 +193,29 @@ function updateModelSelection(radio) {
     radio.parentElement.style.borderColor = '#66bb6a';
 }
 
-document.getElementById('conversationForm').addEventListener('submit', function(e) {
+document.getElementById('conversationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
     const conversationConfig = Object.fromEntries(formData.entries());
-    
-    // In a real implementation, this would save the configuration and start the conversation
-    console.log('Conversation Configuration:', conversationConfig);
-    
-    // For now, redirect to a mock conversation
-    const newConversationId = Math.floor(Math.random() * 1000) + 100;
-    // Show loading animation
     const submitBtn = document.querySelector('button[type="submit"]');
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin icon"></i>Preparing Conversation...';
     submitBtn.disabled = true;
-    
-    // Simulate AI processing time
-    setTimeout(() => {
-        window.location.href = `/project/{{ project.id }}/conversation/${newConversationId}`;
-    }, 2000);
+
+    try {
+        const res = await axios.post('/api/create-conversation', {
+            project_id: {{ project.id }},
+            ...conversationConfig
+        });
+        const redirectUrl = res.data && res.data.redirect_url;
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+    } catch (err) {
+        console.error('Failed to create conversation', err);
+        submitBtn.innerHTML = 'Start Learning Conversation';
+        submitBtn.disabled = false;
+    }
 });
 
 // Enhanced form animations

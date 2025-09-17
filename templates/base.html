@@ -6,6 +6,20 @@
     <title>{% block title %}SciWeb - Interactive Learning{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --bg-start: #a8e6cf;
+            --bg-end: #dcedc1;
+            --accent-1: #81c784;
+            --accent-2: #66bb6a;
+            --text-primary: #2d5016;
+            --text-secondary: #4a7c59;
+            --surface: rgba(255, 255, 255, 0.92);
+            --surface-border: rgba(255, 255, 255, 0.65);
+            --glow: rgba(129, 199, 132, 0.35);
+            --shadow-strong: 0 30px 60px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5);
+            --shadow-medium: 0 18px 40px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.5);
+            --border-gradient: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(200,255,220,0.7));
+        }
         * {
             margin: 0;
             padding: 0;
@@ -43,6 +57,23 @@
                 box-shadow: 0 0 0 10px rgba(129, 199, 132, 0);
             }
         }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes overlayFade {
+            0% { opacity: 0; }
+            12% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
         
         @keyframes shimmer {
             0% {
@@ -73,16 +104,22 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+            background:
+                radial-gradient(1200px 600px at 10% 0%, rgba(255,255,255,0.35), transparent 60%),
+                radial-gradient(1200px 700px at 90% 100%, rgba(255,255,255,0.3), transparent 60%),
+                conic-gradient(from 210deg at 20% 30%, rgba(160, 232, 200, 0.35), transparent 30%, rgba(240,255,240,0.2) 60%, transparent 75%),
+                linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, rgba(255,255,255,0) 2px 6px);
+            background-attachment: fixed;
             min-height: 100vh;
-            color: #2d5016;
+            color: var(--text-primary);
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 20px;
-            animation: fadeInUp 0.8s ease-out;
+            padding: 18px 20px 20px;
+            animation: fadeInScale 0.6s ease-out;
         }
         
         .back-nav {
@@ -118,11 +155,11 @@
         
         .page-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
         }
         
         .page-title {
-            color: #2d5016;
+            color: var(--text-primary);
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 10px;
@@ -139,12 +176,12 @@
             transform: translateX(-50%);
             width: 0;
             height: 3px;
-            background: linear-gradient(90deg, #81c784, #a8e6cf);
+            background: linear-gradient(90deg, var(--accent-1), var(--bg-start));
             animation: typewriter 1.5s ease-out 0.8s both;
         }
         
         .page-subtitle {
-            color: #4a7c59;
+            color: var(--text-secondary);
             font-size: 1.1rem;
             font-weight: 300;
             animation: fadeInUp 1s ease-out 0.4s both;
@@ -152,16 +189,22 @@
         }
         
         .card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--surface);
             border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(168, 230, 207, 0.15);
+            padding: 22px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-medium);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid transparent;
+            background-image:
+                linear-gradient(var(--surface), var(--surface)),
+                var(--border-gradient);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            will-change: transform, box-shadow;
         }
         
         .card::before {
@@ -176,8 +219,8 @@
         }
         
         .card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(168, 230, 207, 0.3);
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: var(--shadow-strong);
         }
         
         .card:hover::before {
@@ -187,8 +230,8 @@
         .btn {
             display: inline-block;
             padding: 12px 24px;
-            background: linear-gradient(45deg, #81c784, #a8e6cf);
-            color: #2d5016;
+            background: linear-gradient(45deg, var(--accent-1), var(--bg-start));
+            color: var(--text-primary);
             text-decoration: none;
             border-radius: 25px;
             font-weight: 600;
@@ -198,6 +241,7 @@
             font-size: 1rem;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
         }
         
         .btn::before {
@@ -216,7 +260,7 @@
         .btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 12px 35px rgba(129, 199, 132, 0.4);
-            background: linear-gradient(45deg, #66bb6a, #81c784);
+            background: linear-gradient(45deg, var(--accent-2), var(--accent-1));
         }
         
         .btn:hover::before {
@@ -241,7 +285,7 @@
         
         .grid {
             display: grid;
-            gap: 20px;
+            gap: 16px;
         }
         
         .grid-2 {
@@ -249,7 +293,7 @@
         }
         
         .grid-3 {
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
         
         .badge {
@@ -279,7 +323,7 @@
         
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 16px;
             }
             
             .page-title {
@@ -290,14 +334,262 @@
                 padding: 20px;
             }
         }
+
+        /* Splash overlay */
+        #splashOverlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            background: radial-gradient(600px 300px at 20% 20%, rgba(255,255,255,0.25), transparent 60%),
+                        radial-gradient(700px 400px at 80% 80%, rgba(255,255,255,0.22), transparent 60%),
+                        linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            z-index: 2000;
+            animation: overlayFade 2.6s ease-in-out forwards;
+        }
+        .splash-inner {
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .splash-icon {
+            width: 136px;
+            height: 136px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent-2), var(--bg-start));
+            box-shadow: 0 12px 40px var(--glow);
+            animation: iconFloat 1.8s ease-in-out infinite;
+        }
+        .splash-text {
+            margin-top: 16px;
+            font-weight: 700;
+            font-size: 2rem;
+            letter-spacing: 0.8px;
+        }
+
+        /* Animated green gradient veil */
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes veilFade {
+            0%, 100% { opacity: 0.18; }
+            50% { opacity: 0.32; }
+        }
+        #gradientVeil {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: linear-gradient(135deg,
+                        rgba(129,199,132,0.45) 0%,
+                        rgba(104,187,106,0.38) 25%,
+                        rgba(168,230,207,0.35) 50%,
+                        rgba(198,240,220,0.40) 75%,
+                        rgba(129,199,132,0.45) 100%);
+            background-size: 200% 200%;
+            animation: gradientFlow 22s ease-in-out infinite, veilFade 9s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #gradientVeil { animation: none; opacity: 0.22; }
+            #bgLayer { animation: none; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Global glass header navigation -->
+    <header id="glassHeader" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1200;">
+        <div style="max-width:1180px; margin: 10px auto 0; padding: 10px 16px; border-radius: 14px; backdrop-filter: blur(10px); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 12px 30px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:space-between;">
+            <a href="{{ url_for('dashboard') }}" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                <span style="width: 36px; height: 36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--accent-2), var(--bg-start)); box-shadow: 0 6px 16px var(--glow);">
+                    <i class="fas fa-spider" style="color: var(--text-primary);"></i>
+                </span>
+                <span style="font-weight:800; color: var(--text-primary); letter-spacing: .4px;">SciWeb</span>
+            </a>
+            <nav style="display:flex; gap:10px; align-items:center;">
+                <a href="{{ url_for('dashboard') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Dashboard</a>
+                <a href="{{ url_for('style') }}" class="btn btn-secondary" style="padding:8px 14px; font-size: .95rem;">Styles</a>
+                {% if current_user.is_authenticated %}
+                <span style="color: var(--text-secondary); font-size:.95rem; margin:0 6px;">Hi, {{ current_user.display_name or current_user.email }}</span>
+                <a href="{{ url_for('logout') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Logout</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-secondary" style="padding:8px 14px; font-size: .95rem;">Sign Up</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <div id="bgLayer" style="position: fixed; inset: 0; z-index: -1; pointer-events: none;
+        background: radial-gradient(800px 400px at 15% 20%, rgba(160,232,200,0.35), transparent 60%),
+                    radial-gradient(900px 500px at 85% 80%, rgba(180,240,210,0.3), transparent 60%),
+                    conic-gradient(from 200deg at 70% 30%, rgba(255,255,255,0.25), rgba(168,230,207,0.22), rgba(220,237,193,0.25), rgba(255,255,255,0.18)),
+                    linear-gradient(135deg, #a8e6cf 0%, #cfeec7 35%, #dcedc1 70%, #bdebd6 100%);
+        filter: saturate(105%);
+        animation: bgDrift 28s ease-in-out infinite alternate;
+    "></div>
+    <div id="gradientVeil"></div>
+    <div id="splashOverlay">
+        <div class="splash-inner">
+            <div class="splash-icon">
+                <i class="fas fa-spider" style="font-size: 2rem; color: var(--text-primary);"></i>
+            </div>
+            <div class="splash-text">Welcome to SciWeb!</div>
+        </div>
+    </div>
+
+    <div class="container" id="pageContent" style="padding-top: 86px; position: relative; z-index: 2;">
         {% block content %}{% endblock %}
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <script>
+        // Animated background drift
+        (function(){
+            const style = document.createElement('style');
+            style.innerHTML = `@keyframes bgDrift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(0,-30px,0) scale(1.02); } }`;
+            document.head.appendChild(style);
+        })();
+    </script>
+    <script>
+        // Splash control: show on pages that set window.SCIWEB_SPLASH = true
+        (function(){
+            const shouldShow = (typeof window.SCIWEB_SPLASH !== 'undefined') ? !!window.SCIWEB_SPLASH : false;
+            const overlay = document.getElementById('splashOverlay');
+            const content = document.getElementById('pageContent');
+            if (!overlay || !content) return;
+            if (shouldShow) {
+                content.style.opacity = '0';
+                overlay.style.display = 'flex';
+                setTimeout(() => {
+                    overlay.style.transition = 'opacity 400ms ease';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        content.style.transition = 'opacity 380ms ease, transform 380ms ease';
+                        content.style.opacity = '1';
+                        content.style.transform = 'translateY(0)';
+                    }, 600);
+                }, 2200);
+            } else {
+                content.style.opacity = '1';
+            }
+        })();
+    </script>
     {% block scripts %}{% endblock %}
+
+    <!-- Spider helper agent -->
+    <div id="spiderAgent" style="position: fixed; right: 24px; bottom: 110px; z-index: 1900; display: none;">
+        <div id="spiderFab" title="SciWeb Guide" style="width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-strong); cursor: grab; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,255,220,0.75)); border: 1px solid rgba(255,255,255,0.7);">
+            <i class="fas fa-spider" style="font-size: 1.2rem; color: var(--text-primary);"></i>
+        </div>
+        <div id="spiderBubble" class="card" style="position:absolute; right:72px; bottom:0; padding:14px 16px; max-width: 320px; box-shadow: var(--shadow-strong); border-radius:14px; display:none;">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+                <div style="width: 38px; height: 38px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--accent-2), var(--bg-start)); box-shadow: 0 6px 16px var(--glow);">
+                    <i class="fas fa-spider" style="color: var(--text-primary);"></i>
+                </div>
+                <div style="flex:1; color: var(--text-secondary); font-size: 0.95rem;">
+                    <strong style="color: var(--text-primary);">SciWeb Guide</strong>
+                    <p style="margin:6px 0 0 0;">Quick actions: create a project, open styles, or go to dashboard.</p>
+                    <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                        <button class="btn" id="agentStartProject" style="padding:8px 12px; font-size:0.9rem;">
+                            <i class="fas fa-plus icon"></i> New Project
+                        </button>
+                        <button class="btn btn-secondary" id="agentStyles" style="padding:8px 12px; font-size:0.9rem;">
+                            <i class="fas fa-palette icon"></i> Styles
+                        </button>
+                        <a class="btn" href="{{ url_for('dashboard') }}" style="padding:8px 12px; font-size:0.9rem;">
+                            <i class="fas fa-home icon"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function(){
+            const agent = document.getElementById('spiderAgent');
+            const fab = document.getElementById('spiderFab');
+            const bubble = document.getElementById('spiderBubble');
+            const toNewProject = () => {
+                const btn = document.getElementById('openNewProjectModal') || document.getElementById('openNewProjectModalHero');
+                if (btn) btn.click();
+            };
+            const toStyles = () => { window.location.href = '{{ url_for('style') }}'; };
+            const start = () => {
+                if (!agent) return;
+                agent.style.display = 'block';
+                bubble.style.opacity = '0';
+                setTimeout(() => { bubble.style.transition = 'opacity 300ms ease, transform 300ms ease'; bubble.style.opacity = '1'; bubble.style.transform = 'translateY(-4px)'; }, 200);
+                avoidHeroOverlap();
+            };
+            document.addEventListener('DOMContentLoaded', start);
+            if (fab) fab.addEventListener('click', () => {
+                if (bubble.style.display === 'none' || !bubble.style.display) {
+                    bubble.style.display = 'block';
+                    bubble.style.opacity = '0';
+                    requestAnimationFrame(()=>{
+                        bubble.style.transition = 'opacity 200ms ease, transform 200ms ease';
+                        bubble.style.opacity = '1';
+                        bubble.style.transform = 'translateY(-4px)';
+                    });
+                } else {
+                    bubble.style.transition = 'opacity 160ms ease, transform 160ms ease';
+                    bubble.style.opacity = '0';
+                    bubble.style.transform = 'translateY(0)';
+                    setTimeout(()=>{ bubble.style.display = 'none'; }, 160);
+                }
+            });
+            const spStart = document.getElementById('agentStartProject');
+            const spStyles = document.getElementById('agentStyles');
+            if (spStart) spStart.addEventListener('click', toNewProject);
+            if (spStyles) spStyles.addEventListener('click', toStyles);
+
+            // Make the spider FAB draggable
+            let isDragging = false, startX = 0, startY = 0, originRight = 18, originBottom = 18;
+            if (fab) {
+                fab.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX; startY = e.clientY;
+                    fab.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    agent.style.right = `${Math.max(6, originRight - dx)}px`;
+                    agent.style.bottom = `${Math.max(80, originBottom - dy)}px`;
+                });
+                document.addEventListener('mouseup', () => {
+                    if (!isDragging) return;
+                    const rightPx = parseInt(agent.style.right || originRight, 10);
+                    const bottomPx = parseInt(agent.style.bottom || originBottom, 10);
+                    originRight = isNaN(rightPx) ? originRight : rightPx;
+                    originBottom = isNaN(bottomPx) ? originBottom : bottomPx;
+                    isDragging = false;
+                    fab.style.cursor = 'grab';
+                });
+            }
+
+            // Avoid hero overlap on dashboard
+            function avoidHeroOverlap(){
+                const hero = document.getElementById('heroCard');
+                if (!hero || !agent) return;
+                const h = hero.getBoundingClientRect();
+                const a = agent.getBoundingClientRect();
+                // If agent overlaps hero, push it down
+                const overlaps = !(a.right < h.left || a.left > h.right || a.bottom < h.top || a.top > h.bottom);
+                if (overlaps) {
+                    agent.style.bottom = `${Math.max(140, window.innerHeight - h.bottom + 24)}px`;
+                }
+            }
+            window.addEventListener('resize', avoidHeroOverlap);
+        })();
+    </script>
 </body>
 </html>

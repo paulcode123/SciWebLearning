@@ -10,18 +10,22 @@
     </a>
 </div>
 
-<div class="page-header">
+<div class="page-header" style="text-align: center;">
     <h1 class="page-title">
         <i class="fas fa-book icon"></i>
         {{ project.title }}
     </h1>
-    <p class="page-subtitle">{{ project.description }}</p>
+    <p class="page-subtitle" style="max-width: 780px; margin: 0 auto;">{{ project.description }}</p>
 </div>
 
 <div style="margin-bottom: 30px; text-align: center;">
     <a href="{{ url_for('new_conversation', project_id=project.id) }}" class="btn btn-secondary" style="font-size: 1.1rem; padding: 15px 30px;">
         <i class="fas fa-plus icon"></i>
         Start New Conversation
+    </a>
+    <a href="{{ url_for('knowledge_graph', project_id=project.id) }}" class="btn" style="font-size: 1.1rem; padding: 15px 30px; margin-left: 10px;">
+        <i class="fas fa-project-diagram icon"></i>
+        View Knowledge Graph
     </a>
 </div>
 
@@ -34,7 +38,7 @@
     
     <div class="grid grid-2">
         {% for conversation in project.conversations %}
-        <div class="conversation-card" data-index="{{ loop.index0 }}" style="background: #f0f8f0; border-radius: 10px; padding: 20px; border-left: 4px solid #81c784;">
+        <div class="conversation-card" data-index="{{ loop.index0 }}" style="background: linear-gradient(135deg, rgba(240,248,240,0.9), rgba(240,248,240,0.75)); border-radius: 12px; padding: 20px; border-left: 4px solid #81c784;">
             <h3 style="color: #2d5016; margin-bottom: 8px;">
                 <i class="fas fa-comment icon" style="color: #81c784;"></i>
                 {{ conversation.title }}
@@ -43,15 +47,15 @@
             <div style="margin-bottom: 15px;">
                 <span style="color: #4a7c59; font-size: 0.9rem;">
                     <i class="fas fa-calendar icon"></i>
-                    {{ conversation.date }}
+                    {{ conversation.created_at.strftime('%Y-%m-%d') if conversation.created_at else '' }}
                 </span>
                 <span style="color: #4a7c59; font-size: 0.9rem; margin-left: 15px;">
                     <i class="fas fa-comments icon"></i>
-                    {{ conversation.message_count }} messages
+                    {{ conversation.messages|length }} messages
                 </span>
             </div>
             
-            <a href="{{ url_for('chat_interface', project_id=project.id, conversation_id=conversation.id) }}" class="btn" style="font-size: 0.9rem; padding: 8px 16px;">
+            <a href="{{ url_for('chat_interface', project_id=project.id, conversation_id=conversation.id) }}" class="btn" style="font-size: 0.9rem; padding: 10px 16px;">
                 <i class="fas fa-play icon"></i>
                 Continue Chat
             </a>
@@ -80,22 +84,22 @@
     </h2>
     
     <div class="grid grid-3">
-        <div class="progress-stat" data-index="0" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #81c784, #a8e6cf); color: #2d5016; border-radius: 10px;">
+        <div class="progress-stat" data-index="0" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #81c784, #a8e6cf); color: #2d5016; border-radius: 12px;">
             <i class="fas fa-comments stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
             <h3 class="stat-number" data-target="{{ project.conversations|length }}" style="font-size: 2rem; margin-bottom: 5px;">0</h3>
             <p>Total Conversations</p>
         </div>
         
-        <div class="progress-stat" data-index="1" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #ffb3ba, #ffdfba); color: #8b4513; border-radius: 10px;">
+        <div class="progress-stat" data-index="1" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #ffb3ba, #ffdfba); color: #8b4513; border-radius: 12px;">
             <i class="fas fa-calendar stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
             <h3 style="font-size: 2rem; margin-bottom: 5px;">{{ project.created_date }}</h3>
             <p>Start Date</p>
         </div>
         
-        <div class="progress-stat" data-index="2" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #c8f7c5, #e8f5e8); color: #2d5016; border-radius: 10px;">
+        <div class="progress-stat" data-index="2" style="text-align: center; padding: 20px; background: linear-gradient(135deg, #c8f7c5, #e8f5e8); color: #2d5016; border-radius: 12px;">
             <i class="fas fa-trophy stat-icon" style="font-size: 2rem; margin-bottom: 10px;"></i>
-            <h3 style="font-size: 2rem; margin-bottom: 5px;">Coming Soon</h3>
-            <p>Progress Tracking</p>
+            <h3 style="font-size: 2rem; margin-bottom: 5px;">{{ project.conversations|length * 5 }} pts</h3>
+            <p>Progress Points</p>
         </div>
     </div>
 </div>

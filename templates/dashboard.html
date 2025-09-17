@@ -3,17 +3,123 @@
 {% block title %}SciWeb - Learning Dashboard{% endblock %}
 
 {% block content %}
+<script>window.SCIWEB_SPLASH = true;</script>
 <div class="page-header">
-    <h1 class="page-title">
+    <h1 class="page-title" style="margin-bottom: 14px;">
         <i class="fas fa-graduation-cap icon"></i>
         SciWeb Learning Dashboard
     </h1>
-    <p class="page-subtitle">Your personalized AI-powered learning journey</p>
+    <p class="page-subtitle" style="opacity:1; animation:none;">
+        Your personalized AI-powered learning journey
+    </p>
 </div>
 
+<!-- Minimal hero to reduce empty space while staying clean -->
+<div id="heroCard" class="card" style="margin-bottom: 16px; background-image: linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)), radial-gradient(900px 360px at 10% 30%, rgba(168,230,207,0.35), transparent 60%); background-clip: padding-box, border-box;">
+    <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div style="flex:1; min-width:260px;">
+            <h3 style="margin:0 0 8px 0; color: var(--text-primary);">Start, continue, or visualize your progress</h3>
+            <p style="margin:0; color: var(--text-secondary);">Create a project, pick a style, and let AI guide your rediscovery of ideas.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <a href="#" id="openNewProjectModalHero" class="btn">
+                <i class="fas fa-plus icon"></i> New Project
+            </a>
+            <a href="{{ url_for('style') }}" class="btn btn-secondary">
+                <i class="fas fa-palette icon"></i> Styles
+            </a>
+        </div>
+    </div>
+ </div>
+
+<!-- Tools & Shortcuts -->
+<div class="card" id="shortcutsCard" style="margin-bottom: 16px; background-image: linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)), radial-gradient(900px 360px at 85% 20%, rgba(168,230,207,0.35), transparent 60%); background-clip: padding-box, border-box;">
+    <h2 style="color: #2d5016; margin-bottom: 14px; display: flex; align-items: center;">
+        <i class="fas fa-toolbox icon" style="color:#81c784;"></i>
+        Tools & Shortcuts
+    </h2>
+    <div class="grid grid-3">
+        <div style="background: linear-gradient(135deg, rgba(245,255,245,0.95), rgba(235,255,245,0.9)); border:1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #66bb6a, #a8e6cf); box-shadow: 0 6px 16px rgba(129,199,132,0.35);">
+                    <i class="fas fa-x-ray" style="color:#2d5016;"></i>
+                </span>
+                <strong style="color:#2d5016;">Weasis</strong>
+            </div>
+            <p style="color:#4a7c59; margin:0; font-size:0.95rem;">Open your DICOM viewer.</p>
+            <div style="display:flex; gap:8px; margin-top:auto;">
+                <button class="btn" onclick="openWeasis()" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-play icon"></i> Open Weasis
+                </button>
+                <a class="btn btn-secondary" href="https://weasis.org" target="_blank" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-info-circle icon"></i> Site
+                </a>
+            </div>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(245,255,245,0.95), rgba(235,255,245,0.9)); border:1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #66bb6a, #a8e6cf); box-shadow: 0 6px 16px rgba(129,199,132,0.35);">
+                    <i class="fab fa-dropbox" style="color:#2d5016;"></i>
+                </span>
+                <strong style="color:#2d5016;">Dropbox</strong>
+            </div>
+            <p style="color:#4a7c59; margin:0; font-size:0.95rem;">Access your Dropbox quickly.</p>
+            <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
+                <a class="btn" href="https://www.dropbox.com/home" target="_blank" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-external-link-alt icon"></i> Open Web
+                </a>
+                <a class="btn btn-secondary" href="file:///C:/Users/Aaron/Dropbox" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-folder-open icon"></i> Open Folder
+                </a>
+            </div>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(245,255,245,0.95), rgba(235,255,245,0.9)); border:1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #66bb6a, #a8e6cf); box-shadow: 0 6px 16px rgba(129,199,132,0.35);">
+                    <i class="fas fa-folder" style="color:#2d5016;"></i>
+                </span>
+                <strong style="color:#2d5016;">OneDrive</strong>
+            </div>
+            <p style="color:#4a7c59; margin:0; font-size:0.95rem;">Open your OneDrive documents.</p>
+            <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
+                <a class="btn" href="file:///C:/Users/Aaron/OneDrive" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-folder-open icon"></i> Open Folder
+                </a>
+            </div>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(245,255,245,0.95), rgba(235,255,245,0.9)); border:1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #66bb6a, #a8e6cf); box-shadow: 0 6px 16px rgba(129,199,132,0.35);">
+                    <i class="fas fa-file-excel" style="color:#2d5016;"></i>
+                </span>
+                <strong style="color:#2d5016;">Excel</strong>
+            </div>
+            <p style="color:#4a7c59; margin:0; font-size:0.95rem;">Launch Microsoft Excel.</p>
+            <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
+                <button class="btn" onclick="openOffice('excel')" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-play icon"></i> Open Excel
+                </button>
+            </div>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(245,255,245,0.95), rgba(235,255,245,0.9)); border:1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #66bb6a, #a8e6cf); box-shadow: 0 6px 16px rgba(129,199,132,0.35);">
+                    <i class="fas fa-file-word" style="color:#2d5016;"></i>
+                </span>
+                <strong style="color:#2d5016;">Word</strong>
+            </div>
+            <p style="color:#4a7c59; margin:0; font-size:0.95rem;">Launch Microsoft Word.</p>
+            <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
+                <button class="btn" onclick="openOffice('word')" style="padding:8px 12px; font-size:0.95rem;">
+                    <i class="fas fa-play icon"></i> Open Word
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="grid grid-3" id="projectGrid">
     {% for project in projects %}
-    <div class="card project-card" data-index="{{ loop.index0 }}">
+    <div class="card project-card" data-index="{{ loop.index0 }}" style="height:100%; display:flex; flex-direction:column;">
         <h3 style="color: #2d5016; margin-bottom: 10px; font-size: 1.3rem;">
             <i class="fas fa-book icon" style="color: #81c784;"></i>
             {{ project.title }}
@@ -33,15 +139,17 @@
             </span>
         </div>
         
-        <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn">
+        <div style="margin-top:auto; display:flex;">
+        <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="btn" style="width:100%; text-align:center;">
             <i class="fas fa-arrow-right icon"></i>
             Enter Project
         </a>
+        </div>
     </div>
     {% endfor %}
     
     <!-- Add New Project Card -->
-    <div class="card new-project-card" data-index="{{ projects|length }}" style="border: 2px dashed #b8e6b8; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 200px;">
+    <div class="card new-project-card" data-index="{{ projects|length }}" style="border: 2px dashed #b8e6b8; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 220px; background: linear-gradient(135deg, rgba(168,230,207,0.25), rgba(220,237,193,0.3));">
         <i class="fas fa-plus" style="font-size: 2rem; color: #81c784; margin-bottom: 10px;"></i>
         <h3 style="color: #4a7c59; margin-bottom: 10px;">Create New Project</h3>
         <p style="color: #4a7c59; margin-bottom: 15px;">Start a new learning journey</p>
@@ -163,8 +271,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // New Project Modal wiring
     const openButtons = [];
     const btn1 = document.getElementById('openNewProjectModal');
+    const btn1b = document.getElementById('openNewProjectModalHero');
     const btn2 = document.getElementById('openNewProjectModalEmpty');
     if (btn1) openButtons.push(btn1);
+    if (btn1b) openButtons.push(btn1b);
     if (btn2) openButtons.push(btn2);
     const modal = document.getElementById('newProjectModal');
     const startBtn = document.getElementById('startOutlineBtn');
@@ -200,6 +310,26 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = '/outline';
         });
     }
+    // Weasis launcher
+    window.openWeasis = function() {
+        const timeout = setTimeout(() => { window.open('https://weasis.org', '_blank'); }, 1200);
+        // Attempt protocol handler if registered
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'weasis://';
+        document.body.appendChild(iframe);
+        setTimeout(() => { try { document.body.removeChild(iframe); } catch(e){} clearTimeout(timeout); }, 1500);
+    };
+    // Office launchers via protocol fallback
+    window.openOffice = function(kind) {
+        const prot = kind === 'excel' ? 'excel://' : 'ms-word://';
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = prot;
+        const t = setTimeout(()=>{ alert('If the app did not open, launch it from Start Menu once to register its protocol.'); }, 1500);
+        document.body.appendChild(iframe);
+        setTimeout(()=>{ try{ document.body.removeChild(iframe); }catch(e){} clearTimeout(t); }, 1800);
+    };
 });
 </script>
 {% endblock %}

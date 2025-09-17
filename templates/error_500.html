@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align:center;">
+    <h1 class="page-title"><i class="fas fa-bug icon"></i> Something went wrong</h1>
+    <p class="page-subtitle">An unexpected error occurred. Please try again.</p>
+</div>
+
+<div class="card" style="text-align:center;">
+    <a class="btn" href="{{ url_for('dashboard') }}"><i class="fas fa-home icon"></i> Go to Dashboard</a>
+    <a class="btn btn-secondary" href="{{ url_for('login') }}" style="margin-left:8px;"><i class="fas fa-right-to-bracket icon"></i> Login</a>
+</div>
+{% endblock %}
+
