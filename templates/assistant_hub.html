@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant Hub - SciWeb{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+    </div>
+
+<div class="page-header" style="text-align:center;">
+    <h1 class="page-title"><i class="fas fa-robot icon"></i> AI Assistant Hub</h1>
+    <p class="page-subtitle" style="max-width:780px; margin:0 auto;">Pick a template and start a guided conversation. Choose a project for context or begin a fresh outline.</p>
+</div>
+
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;">
+        <a class="btn" href="{{ url_for('outline_chat') }}"><i class="fas fa-magic icon"></i> New Outline</a>
+        {% if projects %}
+        <div style="display:flex; gap:8px; align-items:center;">
+            <span style="color: var(--text-secondary);">Use project context:</span>
+            <select id="assistantProject" style="padding:8px 10px; border:2px solid #c8f7c5; border-radius:10px;">
+                {% for p in projects %}
+                <option value="{{ p.id }}">{{ p.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-3">
+    {% for item in featured %}
+    <div class="card" style="display:flex; flex-direction:column;">
+        <h3 style="color:#2d5016; margin-bottom: 6px;"><i class="fas fa-sparkles icon"></i> {{ item.title }}</h3>
+        <p style="color:#4a7c59; margin-bottom: 12px;">{{ item.objective }}</p>
+        <div style="margin-top:auto; display:flex; gap:8px; flex-wrap:wrap;">
+            {% if projects %}
+            <button class="btn" onclick="launchTemplate('{{ item.style }}')"><i class="fas fa-play icon"></i> Start</button>
+            {% else %}
+            <a class="btn" href="{{ url_for('outline_chat') }}"><i class="fas fa-play icon"></i> Start</a>
+            {% endif %}
+            <span class="badge" style="background: linear-gradient(45deg, #a8e6cf, #c8f7c5);">{{ item.style }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function launchTemplate(styleName) {
+    const project = document.getElementById('assistantProject');
+    if (!project) {
+        window.location.href = '{{ url_for('outline_chat') }}';
+        return;
+    }
+    const pid = project.value;
+    // Quick-create a conversation with preselected style and a suggested objective
+    const objective = `${styleName} guided session`;
+    axios.post('/api/create-conversation', {
+        project_id: Number(pid),
+        objective: objective,
+        conversation_style: styleName,
+        learning_pace: 'Moderate',
+        difficulty_level: 'Intermediate',
+        explanation_style: 'Examples-heavy',
+        interaction_preference: 'Highly interactive'
+    }).then(res => {
+        if (res.data && res.data.redirect_url) {
+            window.location.href = res.data.redirect_url;
+        }
+    }).catch(() => alert('Could not create conversation. Try creating a project first.'));
+}
+</script>
+{% endblock %}
+

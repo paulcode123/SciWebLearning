@@ -425,6 +425,24 @@ def knowledge_graph(project_id):
 
     return render_template('knowledge_graph.html', project=project, nodes_json=json.dumps(node_payload), edges_json=json.dumps(edge_payload))
 
+@app.route('/assistant')
+@login_required
+def assistant_hub():
+    """Central hub to launch guided AI chats by template/category."""
+    projects = (
+        Project.query.filter_by(owner_id=current_user.id)
+        .order_by(Project.id.desc())
+        .all()
+    )
+    featured = [
+        {"title": "Historical Simulation", "objective": "Role-play with a historical figure to explore core ideas.", "style": "Historical Figure Conversations"},
+        {"title": "STEM Derivation", "objective": "Re-derive a physics/maths law step by step.", "style": "Socratic Questioning"},
+        {"title": "Scaffolded Prompting", "objective": "Guided exploration with adaptive hints.", "style": "Guided Problem Solving"},
+        {"title": "Group Debate", "objective": "Debate-style learning across multiple viewpoints.", "style": "Debate Partner"},
+        {"title": "Concept Mapping", "objective": "Build a concept graph of a topic.", "style": "Concept Mapping"},
+        {"title": "Prompt Autocomposer", "objective": "Auto-generate a conversation flow for my theme.", "style": "Brainstorming Sessions"},
+    ]
+    return render_template('assistant_hub.html', projects=projects, featured=featured)
 if __name__ == '__main__':
     # Dev convenience: create tables if not present
     with app.app_context():
