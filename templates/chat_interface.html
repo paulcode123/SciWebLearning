@@ -339,7 +339,7 @@ document.getElementById('chatForm').addEventListener('submit', async function(e)
             message: message,
             project_id: {{ project.id }},
             conversation_id: {{ conversation.id }},
-            outline_mode: OUTLINE_MODE
+            outline_mode: Boolean(OUTLINE_MODE)
         });
         
         // Add AI response
@@ -400,11 +400,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-3px) scale(1.05)';
             this.style.boxShadow = '0 8px 25px rgba(129, 199, 132, 0.3)';
+            this.style.opacity = '1';
         });
         
         btn.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(-2px)';
             this.style.boxShadow = '';
+            this.style.opacity = '1';
         });
         
         btn.addEventListener('click', function() {

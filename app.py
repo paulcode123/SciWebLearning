@@ -270,18 +270,36 @@ def send_message():
     """API endpoint to handle chat messages"""
     data = request.json or {}
     message = (data.get('message') or '').strip()
-    outline_mode = bool(data.get('outline_mode', False))
+    raw_outline = data.get('outline_mode', False)
+    outline_mode = (raw_outline is True) or (
+        isinstance(raw_outline, str) and raw_outline.strip().lower() in ('true', '1', 'yes')
+    )
     project_id = data.get('project_id')
     conversation_id = data.get('conversation_id')
 
+    # Force outline mode ONLY for the outline temp session (project_id == 0 or conversation_id == 0)
+    if outline_mode and (project_id not in (0, None) and conversation_id not in (0, None)):
+        outline_mode = False
+
     if outline_mode:
-        response = (
-            "Great—let's shape your learning project. "
-            "Briefly describe what you want to learn, any specific resources you'd like to include, "
-            "whether you prefer surveying existing knowledge or starting from scratch, and if you want deep mastery or a broad overview.\n\n"
-            f"You said: '{message}'."
-        )
-        return jsonify({'response': response, 'timestamp': datetime.now().isoformat()})
+        # Use provider to generate an outline-guided response instead of a static placeholder
+        try:
+            provider = get_default_provider()
+            sys_prompt = (
+                "You are SciWeb, guiding a learner to outline a learning project. Ask concise, targeted"
+                " questions to clarify topic, resources, prior knowledge, and desired depth. Propose a brief"
+                " plan (milestones, skills, checkpoints). End with 1-2 short questions to proceed."
+            )
+            ai_text = provider.chat([
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": message or "Help me plan my learning project."}
+            ])
+        except Exception:
+            ai_text = (
+                "Outline mode active. Set OPENAI_API_KEY to enable guided outlining, or create a project to"
+                " continue in a persistent chat."
+            )
+        return jsonify({'response': ai_text, 'timestamp': datetime.now().isoformat()})
 
     # Normal chat flow with persistence and provider call
     conversation = Conversation.query.join(Project).filter(
@@ -297,19 +315,40 @@ def send_message():
     db.session.add(user_msg)
     db.session.commit()
 
-    # Build provider messages from history (trimmed)
+    # Build provider messages from history (trimmed) with SciWeb system prompt
     history = (
         Message.query.filter_by(conversation_id=conversation.id)
         .order_by(Message.created_at.asc())
         .all()
     )
-    provider_messages = [{"role": m.role, "content": m.content} for m in history][-24:]
+    # Compose a system prompt that encodes SciWeb's learning framework
+    style = conversation.interaction_style or 'Socratic Questioning'
+    sys_prompt = (
+        "You are SciWeb, an AI learning guide. Goals: (1) Conversational knowledge derivation with"
+        " historical simulations and STEM re-derivations; (2) Scaffolded prompting with adaptive hints;"
+        " (3) Build conceptual connections suitable for extraction into a knowledge graph;"
+        " (4) Encourage reflection and milestone framing."
+        f" Interaction style: {style}. Adjust difficulty by learner signals. Prefer prompting the learner"
+        " to think, show steps, and connect ideas historically when relevant. Keep responses concise but"
+        " rigorous; include check-for-understanding questions."
+    )
+    provider_messages = [{"role": "system", "content": sys_prompt}] + [
+        {"role": m.role, "content": m.content} for m in history
+    ][-24:]
 
     try:
         provider = get_default_provider()
         ai_text = provider.chat(provider_messages, model=conversation.ai_model)
     except Exception as e:
-        ai_text = "Sorry, there was an issue contacting the AI provider."
+        # Provide a more actionable error message for setup issues
+        missing_key = 'OPENAI_API_KEY' not in os.environ or not os.environ.get('OPENAI_API_KEY')
+        if missing_key:
+            ai_text = (
+                "Provider unavailable: missing OPENAI_API_KEY. Add it to your environment or .env, then"
+                " refresh and try again."
+            )
+        else:
+            ai_text = "Sorry, there was an issue contacting the AI provider. Please try again."
 
     # Persist assistant message
     ai_msg = Message(conversation_id=conversation.id, role='assistant', content=ai_text)
