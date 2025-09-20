@@ -1,0 +1,14 @@
+*.env
+.env
+.env.*
+api_keys.json
+api_keys.*
+*.pem
+*.key
+*.pfx
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+instance/
+
