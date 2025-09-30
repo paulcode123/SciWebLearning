@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Create - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-wand-magic-sparkles icon"></i> Create</h1>
+    <p class="page-subtitle">Build lessons, quizzes, and collaborative notes.</p>
+</div>
+
+<div class="grid grid-3">
+    {% for t in tools %}
+    <div class="card" style="display:flex; flex-direction:column;">
+        <h3 style="color: var(--text-primary);">{{ t.title }}</h3>
+        <p style="color: var(--text-secondary);">{{ t.desc }}</p>
+        <div style="margin-top:auto;">
+            <button class="btn"><i class="fas fa-arrow-right icon"></i> Open</button>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="card" style="border:2px dashed #b8e6b8; text-align:center; display:flex; flex-direction:column; justify-content:center;">
+        <i class="fas fa-plus" style="color:#81c784; font-size:1.6rem;"></i>
+        <p style="color: var(--text-secondary); margin-top:6px;">New tool idea?</p>
+        <button class="btn btn-secondary" onclick="alert('Suggest a tool coming soon')"><i class="fas fa-lightbulb icon"></i> Suggest</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((c, i)=>{ c.style.opacity='0'; c.style.transform='translateY(24px)'; c.style.animation=`fadeInUp .6s ease-out ${0.08*i+.2}s both`; });
+});
+</script>
+{% endblock %}
+
+

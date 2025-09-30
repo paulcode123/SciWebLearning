@@ -14,23 +14,57 @@
     </p>
 </div>
 
-<!-- Minimal hero to reduce empty space while staying clean -->
-<div id="heroCard" class="card" style="margin-bottom: 16px; background-image: linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)), radial-gradient(900px 360px at 10% 30%, rgba(168,230,207,0.35), transparent 60%); background-clip: padding-box, border-box;">
+<!-- Hero with social spotlight -->
+<div id="heroCard" class="card" style="margin-bottom: 16px; background-image: linear-gradient(rgba(255,255,255,0.96), rgba(255,255,255,0.96)), radial-gradient(900px 360px at 10% 30%, rgba(163,196,255,0.35), transparent 60%); background-clip: padding-box, border-box;">
     <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
         <div style="flex:1; min-width:260px;">
-            <h3 style="margin:0 0 8px 0; color: var(--text-primary);">Start, continue, or visualize your progress</h3>
-            <p style="margin:0; color: var(--text-secondary);">Create a project, pick a style, and let AI guide your rediscovery of ideas.</p>
+            <h3 style="margin:0 0 8px 0; color: var(--text-primary);">Connect first. Learn faster together.</h3>
+            <p style="margin:0; color: var(--text-secondary);">Jump into your feed and messages. Study with peers in real-time.</p>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="{{ url_for('feed') }}" class="btn" style="opacity:1; background: linear-gradient(45deg, #1d4ed8, #3b82f6); color:#fff; box-shadow: 0 12px 28px rgba(29,78,216,0.35);">
+                <i class="fas fa-stream icon"></i> Open Feed
+            </a>
+            <a href="{{ url_for('messages') }}" class="btn btn-secondary" style="opacity:1; background: linear-gradient(45deg, #0ea5e9, #1d4ed8); color:#fff;">
+                <i class="fas fa-message icon"></i> Messages
+            </a>
             <a href="#" id="openNewProjectModalHero" class="btn" style="opacity:1;">
                 <i class="fas fa-plus icon"></i> New Project
-            </a>
-            <a href="{{ url_for('style') }}" class="btn btn-secondary" style="opacity:1;">
-                <i class="fas fa-palette icon"></i> Styles
             </a>
         </div>
     </div>
  </div>
+
+<!-- Social Spotlight -->
+<div class="card" style="margin-bottom: 16px;">
+    <h2 style="color: var(--text-primary); margin-bottom: 12px; display:flex; align-items:center;">
+        <i class="fas fa-bolt icon" style="color:#1d4ed8;"></i>
+        Social Spotlight
+    </h2>
+    <div class="grid grid-3">
+        <div class="card" style="background: linear-gradient(135deg, rgba(29,78,216,0.08), rgba(14,165,233,0.08));">
+            <h4 style="color: var(--text-primary);">Study Thread: DP Practice</h4>
+            <p style="color: var(--text-secondary);">Join 24 learners practicing knapsack & LCS.</p>
+            <a href="{{ url_for('feed') }}" class="btn" style="padding:8px 12px; font-size:.95rem;">
+                <i class="fas fa-arrow-right icon"></i> View
+            </a>
+        </div>
+        <div class="card" style="background: linear-gradient(135deg, rgba(29,78,216,0.08), rgba(14,165,233,0.08));">
+            <h4 style="color: var(--text-primary);">Cohort: AP Physics C</h4>
+            <p style="color: var(--text-secondary);">Mechanics problem set review at 6pm.</p>
+            <a href="{{ url_for('cohorts') }}" class="btn" style="padding:8px 12px; font-size:.95rem;">
+                <i class="fas fa-arrow-right icon"></i> Join
+            </a>
+        </div>
+        <div class="card" style="background: linear-gradient(135deg, rgba(29,78,216,0.08), rgba(14,165,233,0.08));">
+            <h4 style="color: var(--text-primary);">Whiteboard: Calculus Derivations</h4>
+            <p style="color: var(--text-secondary);">Live co-drawing room starting now.</p>
+            <a href="{{ url_for('study_room') }}" class="btn" style="padding:8px 12px; font-size:.95rem;">
+                <i class="fas fa-arrow-right icon"></i> Enter
+            </a>
+        </div>
+    </div>
+</div>
 
 <!-- Tools & Shortcuts -->
 <div class="card" id="shortcutsCard" style="margin-bottom: 16px; background-image: linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)), radial-gradient(900px 360px at 85% 20%, rgba(168,230,207,0.35), transparent 60%); background-clip: padding-box, border-box;">

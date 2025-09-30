@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-id-badge icon"></i> {{ portfolio.name }}</h1>
+    <p class="page-subtitle">Your public learning portfolio</p>
+    <div style="margin-top:10px;">
+        {% for b in portfolio.badges %}
+        <span class="badge" style="background: linear-gradient(45deg, #ffb3ba, #ffdfba); color:#8b4513;"><i class="fas fa-award icon"></i> {{ b }}</span>
+        {% endfor %}
+    </div>
+    <hr style="margin:14px 0; border:0; height:1px; background: rgba(0,0,0,0.08);">
+</div>
+
+<div class="grid grid-3">
+    <div class="card">
+        <h3 style="color: var(--text-primary); margin-bottom:8px;">Skills</h3>
+        <div>
+            {% for s in portfolio.skills %}
+            <span class="badge">{{ s }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <h3 style="color: var(--text-primary); margin-bottom:8px;">Recent Artifacts</h3>
+        <ul style="color: var(--text-secondary); margin-left:18px;">
+            <li>Lesson draft: Maxwell’s Equations</li>
+            <li>Study thread: DP Practices</li>
+            <li>Concept map: Limits & Continuity</li>
+        </ul>
+    </div>
+    <div class="card">
+        <h3 style="color: var(--text-primary); margin-bottom:8px;">Endorsements</h3>
+        <p style="color: var(--text-secondary);">Peers endorsed your explanations 14 times.</p>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((c, i)=>{ c.style.opacity='0'; c.style.transform='translateY(24px)'; c.style.animation=`fadeInUp .6s ease-out ${0.08*i+.2}s both`; });
+});
+</script>
+{% endblock %}
+
+

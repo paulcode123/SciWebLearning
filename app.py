@@ -47,6 +47,12 @@ def server_error(e):
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
+
+@app.context_processor
+def inject_provider_status():
+    """Expose provider readiness to templates to surface helpful UI banners."""
+    return { 'PROVIDER_READY': bool(os.environ.get('OPENAI_API_KEY')) }
+
 # Mock data used for non-authenticated landing/demo
 mock_projects = [
     {
@@ -482,6 +488,93 @@ def assistant_hub():
         {"title": "Prompt Autocomposer", "objective": "Auto-generate a conversation flow for my theme.", "style": "Brainstorming Sessions"},
     ]
     return render_template('assistant_hub.html', projects=projects, featured=featured)
+
+# New social/collab UI routes (mock data)
+@app.route('/feed')
+@login_required
+def feed():
+    items = [
+        {
+            'id': 1,
+            'author': current_user.display_name or current_user.email,
+            'title': 'Deriving Maxwell’s Equations',
+            'concepts': ['Electromagnetism', 'Vector Calculus'],
+            'type': 'lesson',
+            'helpfulness': 42,
+            'preview': 'A step-by-step derivation from Gauss and Faraday to wave propagation…',
+            'created': datetime.now().strftime('%Y-%m-%d')
+        },
+        {
+            'id': 2,
+            'author': 'Ada Lovelace',
+            'title': 'Study Thread: Dynamic Programming Practice',
+            'concepts': ['Algorithms', 'Recurrence Relations'],
+            'type': 'thread',
+            'helpfulness': 27,
+            'preview': 'Let’s solve coin change, LCS, and knapsack with reasoning traces…',
+            'created': datetime.now().strftime('%Y-%m-%d')
+        },
+    ]
+    return render_template('feed.html', items=items)
+
+
+@app.route('/cohorts')
+@login_required
+def cohorts():
+    groups = [
+        {'id': 1, 'name': 'AP Physics C Cohort', 'members': 18, 'topics': ['Mechanics', 'E&M']},
+        {'id': 2, 'name': 'Linear Algebra Club', 'members': 24, 'topics': ['Eigenvalues', 'SVD']},
+        {'id': 3, 'name': 'World History 1900–1950', 'members': 12, 'topics': ['WWI', 'Interwar', 'WWII']},
+    ]
+    return render_template('cohorts.html', groups=groups)
+
+
+@app.route('/study')
+@login_required
+def study_room():
+    room = {
+        'id': 'demo',
+        'title': 'Focus Room',
+        'members': [current_user.display_name or current_user.email, 'Guest'],
+    }
+    return render_template('study_room.html', room=room)
+
+
+@app.route('/profile')
+@login_required
+def profile():
+    portfolio = {
+        'name': current_user.display_name or current_user.email,
+        'badges': ['Concept Mapper', 'Helpful Mentor'],
+        'skills': ['Calculus', 'Python', 'Critical Thinking'],
+    }
+    return render_template('profile.html', portfolio=portfolio)
+
+
+@app.route('/create')
+@login_required
+def create_hub():
+    tools = [
+        {'id': 'lesson', 'title': 'Lesson Builder', 'desc': 'Compose structured lessons with concept tags.'},
+        {'id': 'quiz', 'title': 'Quiz Builder', 'desc': 'Create practice sets with spaced repetition.'},
+        {'id': 'notes', 'title': 'Collaborative Notes', 'desc': 'Co-edit notes with classmates.'},
+    ]
+    return render_template('create_hub.html', tools=tools)
+
+
+@app.route('/messages')
+@login_required
+def messages():
+    threads = [
+        {'id': 1, 'name': 'AP Physics Chat', 'last': 'Let’s meet 6pm for problem set 3', 'unread': 2},
+        {'id': 2, 'name': 'Linear Algebra Buddies', 'last': 'SVD intuition notes shared', 'unread': 0},
+        {'id': 3, 'name': 'History Debate Team', 'last': 'Finalize sources list', 'unread': 1},
+    ]
+    current = {'id': 1, 'name': 'AP Physics Chat', 'messages': [
+        {'who': 'You', 'text': 'Anyone free to review Gauss’s law derivation?'},
+        {'who': 'Riley', 'text': 'Yes! I can join in 10.'}
+    ]}
+    return render_template('messages.html', threads=threads, current=current)
 if __name__ == '__main__':
     # Dev convenience: create tables if not present
     with app.app_context():

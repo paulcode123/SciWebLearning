@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SciWeb - Interactive Learning{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
     <style>
         :root {
             --bg-start: #a8e6cf;
@@ -399,6 +400,41 @@
             #bgLayer { animation: none; }
         }
     </style>
+    <style>
+        /* High-contrast vivid blue overrides */
+        :root {
+            --bg-start: #2d6df6;
+            --bg-end: #0ea5e9;
+            --accent-1: #3b82f6;
+            --accent-2: #1d4ed8;
+            --text-primary: #0b1b3a;
+            --text-secondary: #1f3b70;
+            --surface: rgba(255, 255, 255, 0.96);
+            --surface-border: rgba(255, 255, 255, 0.85);
+            --glow: rgba(59, 130, 246, 0.35);
+        }
+        body {
+            background:
+                linear-gradient(120deg, #0b64ff 0%, #2d6df6 25%, #0ea5e9 55%, #22d3ee 75%, #3b82f6 100%),
+                radial-gradient(900px 480px at 12% 8%, rgba(255,255,255,0.38), transparent 60%),
+                radial-gradient(1000px 560px at 88% 92%, rgba(255,255,255,0.32), transparent 60%);
+        }
+        #bgLayer {
+            background:
+                radial-gradient(820px 420px at 18% 18%, rgba(255,255,255,0.40), transparent 60%),
+                radial-gradient(960px 520px at 82% 82%, rgba(255,255,255,0.34), transparent 60%),
+                conic-gradient(from 200deg at 70% 30%, rgba(255,255,255,0.28), rgba(163,196,255,0.32), rgba(14,165,233,0.32), rgba(255,255,255,0.26));
+            filter: saturate(120%);
+        }
+        #gradientVeil {
+            background: linear-gradient(135deg,
+                        rgba(29,78,216,0.55) 0%,
+                        rgba(59,130,246,0.50) 25%,
+                        rgba(14,165,233,0.48) 50%,
+                        rgba(34,211,238,0.52) 75%,
+                        rgba(29,78,216,0.55) 100%);
+        }
+    </style>
 </head>
 <body>
     <!-- Global glass header navigation -->
@@ -411,6 +447,8 @@
                 <span style="font-weight:800; color: var(--text-primary); letter-spacing: .4px;">SciWeb</span>
             </a>
             <nav style="display:flex; gap:10px; align-items:center;">
+                <a href="{{ url_for('feed') }}" class="btn" style="padding:8px 14px; font-size: .95rem; background: linear-gradient(45deg, #1d4ed8, #3b82f6); color:#fff; box-shadow: 0 10px 24px rgba(29,78,216,0.35);"><i class="fas fa-stream icon"></i> Feed</a>
+                <a href="{{ url_for('messages') }}" class="btn" style="padding:8px 14px; font-size: .95rem; background: linear-gradient(45deg, #0ea5e9, #1d4ed8); color:#fff; box-shadow: 0 10px 24px rgba(14,165,233,0.35);"><i class="fas fa-message icon"></i> Messages</a>
                 <a href="{{ url_for('dashboard') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Dashboard</a>
                 <a href="{{ url_for('assistant_hub') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Assistant</a>
                 <a href="{{ url_for('style') }}" class="btn btn-secondary" style="padding:8px 14px; font-size: .95rem;">Styles</a>
@@ -478,6 +516,113 @@
             } else {
                 content.style.opacity = '1';
             }
+        })();
+    </script>
+    <script>
+        // Theme and Focus toggles + intent/session modal
+        (function(){
+            const htmlEl = document.documentElement;
+            const themeBtn = document.getElementById('themeToggle');
+            const focusBtn = document.getElementById('focusToggle');
+            const savedTheme = localStorage.getItem('sciweb_theme');
+            if (savedTheme === 'dark') {
+                htmlEl.setAttribute('data-theme', 'dark');
+            }
+            if (themeBtn) {
+                themeBtn.addEventListener('click', function(){
+                    const isDark = htmlEl.getAttribute('data-theme') === 'dark';
+                    if (isDark) { htmlEl.removeAttribute('data-theme'); localStorage.setItem('sciweb_theme', 'light'); }
+                    else { htmlEl.setAttribute('data-theme', 'dark'); localStorage.setItem('sciweb_theme', 'dark'); }
+                });
+            }
+            // Focus mode state
+            let focusActive = false, focusTimerId = null, focusEndAt = 0;
+            function renderHUD(){
+                let hud = document.getElementById('focusHUD');
+                if (!hud) {
+                    hud = document.createElement('div');
+                    hud.id = 'focusHUD';
+                    hud.className = 'card';
+                    hud.style.position = 'fixed';
+                    hud.style.left = '20px';
+                    hud.style.bottom = '20px';
+                    hud.style.zIndex = '1400';
+                    hud.style.minWidth = '260px';
+                    hud.innerHTML = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><strong style="color: var(--text-primary);"><i class="fas fa-bullseye"></i> Focus Session</strong><button id="endFocusBtn" class="btn btn-secondary" style="padding:6px 10px; font-size:.85rem;">End</button></div><div style="margin-top:8px; color: var(--text-secondary);"><span id="focusCountdown">25:00</span> • Goal: <span id="focusGoal">Deep work</span></div>';
+                    document.body.appendChild(hud);
+                    const endBtn = hud.querySelector('#endFocusBtn');
+                    endBtn.addEventListener('click', stopFocus);
+                }
+                const cd = document.getElementById('focusCountdown');
+                if (cd) cd.textContent = formatRemaining();
+            }
+            function formatRemaining(){
+                const remainingMs = Math.max(0, focusEndAt - Date.now());
+                const m = Math.floor(remainingMs / 60000);
+                const s = Math.floor((remainingMs % 60000) / 1000);
+                return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }
+            function tick(){
+                if (!focusActive) return;
+                renderHUD();
+                if (Date.now() >= focusEndAt) { stopFocus(); showReflection(); }
+            }
+            function startFocus(minutes, goal){
+                focusActive = true;
+                document.body.classList.add('focus-mode');
+                focusEndAt = Date.now() + minutes * 60000;
+                const goalEl = document.getElementById('focusGoal');
+                if (goalEl) goalEl.textContent = goal || 'Deep work';
+                renderHUD();
+                if (focusTimerId) clearInterval(focusTimerId);
+                focusTimerId = setInterval(tick, 1000);
+            }
+            function stopFocus(){
+                focusActive = false;
+                document.body.classList.remove('focus-mode');
+                if (focusTimerId) clearInterval(focusTimerId);
+                focusTimerId = null;
+                const hud = document.getElementById('focusHUD');
+                if (hud) hud.remove();
+            }
+            function showIntent(){
+                let modal = document.getElementById('intentModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'intentModal';
+                    modal.style.position = 'fixed';
+                    modal.style.inset = '0';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.background = 'rgba(0,0,0,0.35)';
+                    modal.style.zIndex = '1600';
+                    modal.innerHTML = '<div class="card" style="max-width:520px; width:92%;"><h3 style="color: var(--text-primary); margin-bottom:6px;">Start a Focus Session</h3><p style="color: var(--text-secondary); margin-bottom:14px;">What are you studying now? Set a goal and a time-box.</p><div style="display:flex; flex-direction:column; gap:10px;"><input id="intentGoal" placeholder="e.g., Solve 3 practice problems" style="padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.1);"/><div style="display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" data-min="25">25 min</button><button class="btn" data-min="35">35 min</button><button class="btn" data-min="45">45 min</button></div><div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px;"><button id="intentCancel" class="btn btn-secondary">Cancel</button><button id="intentStart" class="btn">Start</button></div></div></div>';
+                    document.body.appendChild(modal);
+                    modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+                    const quicks = modal.querySelectorAll('button[data-min]');
+                    quicks.forEach(b=> b.addEventListener('click', function(){
+                        const g = document.getElementById('intentGoal').value || 'Deep work';
+                        startFocus(parseInt(this.getAttribute('data-min')), g); modal.remove();
+                    }));
+                    modal.querySelector('#intentCancel').addEventListener('click', ()=> modal.remove());
+                    modal.querySelector('#intentStart').addEventListener('click', function(){
+                        const g = document.getElementById('intentGoal').value || 'Deep work'; startFocus(25, g); modal.remove();
+                    });
+                }
+            }
+            function showReflection(){
+                let modal = document.createElement('div');
+                modal.style.position = 'fixed'; modal.style.inset = '0'; modal.style.display = 'flex'; modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.background = 'rgba(0,0,0,0.35)'; modal.style.zIndex = '1600';
+                modal.innerHTML = '<div class="card" style="max-width:520px; width:92%;"><h3 style="color: var(--text-primary); margin-bottom:6px;">Nice work!</h3><p style="color: var(--text-secondary); margin-bottom:14px;">Write one sentence about what you learned.</p><textarea id="reflectText" style="width:100%; min-height:96px; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.1);"></textarea><div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;"><button id="reflectClose" class="btn btn-secondary">Close</button><button id="reflectSave" class="btn">Save</button></div></div>';
+                document.body.appendChild(modal);
+                modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+                modal.querySelector('#reflectClose').addEventListener('click', ()=> modal.remove());
+                modal.querySelector('#reflectSave').addEventListener('click', ()=> { try { localStorage.setItem('sciweb_reflect_'+Date.now(), document.getElementById('reflectText').value); } catch(e){} modal.remove(); });
+            }
+            if (focusBtn) focusBtn.addEventListener('click', showIntent);
+            // Expose simple API
+            window.SciwebFocus = { start: startFocus, stop: stopFocus };
         })();
     </script>
     {% block scripts %}{% endblock %}

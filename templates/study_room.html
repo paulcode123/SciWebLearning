@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Study Room - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-door-open icon"></i> {{ room.title }}</h1>
+    <p class="page-subtitle">Shared focus with timers, chat, and a whiteboard placeholder.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+        <button class="btn" onclick="window.SciwebFocus && SciwebFocus.start(25, 'Study with group')"><i class="fas fa-bullseye icon"></i> Start 25m</button>
+        <button class="btn btn-secondary" onclick="window.SciwebFocus && SciwebFocus.stop()"><i class="fas fa-stop icon"></i> Stop</button>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card" style="min-height: 360px;">
+        <h3 style="color: var(--text-primary); margin-bottom:10px;"><i class="fas fa-chalkboard icon"></i> Whiteboard</h3>
+        <div id="whiteboard" style="height:280px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px); border-radius:12px;"></div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn btn-secondary"><i class="fas fa-pen icon"></i> Draw</button>
+            <button class="btn btn-secondary"><i class="fas fa-eraser icon"></i> Clear</button>
+        </div>
+    </div>
+    <div class="card" style="min-height: 360px; display:flex; flex-direction:column;">
+        <h3 style="color: var(--text-primary); margin-bottom:10px;"><i class="fas fa-comments icon"></i> Chat</h3>
+        <div id="chatLog" style="flex:1; overflow:auto; background: rgba(255,255,255,0.6); border-radius:10px; padding:10px;">
+            <div style="color: var(--text-secondary);">Welcome {{ room.members|join(', ') }}.</div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+            <input id="chatInput" placeholder="Type a message" style="flex:1; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.1);">
+            <button id="chatSend" class="btn"><i class="fas fa-paper-plane icon"></i> Send</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const chatLog = document.getElementById('chatLog');
+    const input = document.getElementById('chatInput');
+    const send = document.getElementById('chatSend');
+    function append(msg){
+        const p = document.createElement('p');
+        p.textContent = msg;
+        p.style.margin = '6px 0'; p.style.color = 'var(--text-primary)';
+        chatLog.appendChild(p); chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    if (send) send.addEventListener('click', function(){ if (!input.value) return; append('You: '+input.value); input.value=''; });
+});
+</script>
+{% endblock %}
+
+

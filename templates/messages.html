@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-message icon"></i> Messages</h1>
+    <p class="page-subtitle">Stay connected. Learn together.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+        <a class="btn" href="{{ url_for('cohorts') }}"><i class="fas fa-users icon"></i> Find Cohorts</a>
+        <a class="btn" href="{{ url_for('study_room') }}"><i class="fas fa-door-open icon"></i> Enter Study Room</a>
+    </div>
+    <hr style="margin:14px 0; border:0; height:1px; background: rgba(0,0,0,0.08);">
+  </div>
+
+<div class="grid" style="grid-template-columns: 320px 1fr;">
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.05); background: linear-gradient(90deg, rgba(29,78,216,0.08), rgba(14,165,233,0.08));">
+      <strong style="color: var(--text-primary);">Threads</strong>
+    </div>
+    <div>
+      {% for t in threads %}
+      <a href="#" class="thread-item" style="display:block; padding:12px 16px; text-decoration:none; border-bottom:1px solid rgba(0,0,0,0.05);">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="color: var(--text-primary); font-weight:600;">{{ t.name }}</div>
+            <div style="color: var(--text-secondary); font-size:.9rem;">{{ t.last }}</div>
+          </div>
+          {% if t.unread > 0 %}
+          <span class="badge" style="background: linear-gradient(45deg, #1d4ed8, #3b82f6); color:#fff;">{{ t.unread }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card" style="display:flex; flex-direction:column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <h3 style="color: var(--text-primary);"><i class="fas fa-hashtag icon"></i> {{ current.name }}</h3>
+      <div style="display:flex; gap:8px;">
+        <a class="btn" href="{{ url_for('study_room') }}"><i class="fas fa-video icon"></i> Start Session</a>
+        <a class="btn btn-secondary" href="{{ url_for('cohorts') }}"><i class="fas fa-user-plus icon"></i> Add Members</a>
+      </div>
+    </div>
+    <div id="msgLog" style="flex:1; overflow:auto; background: rgba(255,255,255,0.6); border-radius:10px; padding:10px;">
+      {% for m in current.messages %}
+      <div style="margin:8px 0;">
+        <strong style="color: var(--text-primary);">{{ m.who }}:</strong>
+        <span style="color: var(--text-secondary);">{{ m.text }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <input id="msgInput" placeholder="Write a message" style="flex:1; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.1);">
+      <button id="msgSend" class="btn"><i class="fas fa-paper-plane icon"></i> Send</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const items = document.querySelectorAll('.thread-item');
+  items.forEach((it,i)=>{ it.style.opacity='0'; it.style.transform='translateX(-24px)'; it.style.animation=`slideInLeft .5s ease-out ${0.06*i+.2}s both`; });
+  const log = document.getElementById('msgLog');
+  const input = document.getElementById('msgInput');
+  const send = document.getElementById('msgSend');
+  function append(who, text){
+    const wrap = document.createElement('div');
+    wrap.style.margin = '8px 0';
+    wrap.innerHTML = `<strong style="color: var(--text-primary);">${who}:</strong> <span style="color: var(--text-secondary);">${text}</span>`;
+    log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+  }
+  if (send) send.addEventListener('click', function(){ if (!input.value) return; append('You', input.value); input.value=''; });
+});
+</script>
+{% endblock %}
+
+

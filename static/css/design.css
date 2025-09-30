@@ -1,0 +1,72 @@
+/* SciWeb Design System: variables, dark theme, focus-mode */
+
+:root {
+  --bg-start: #a8e6cf;
+  --bg-end: #dcedc1;
+  --accent-1: #81c784;
+  --accent-2: #66bb6a;
+  --text-primary: #2d5016;
+  --text-secondary: #4a7c59;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-border: rgba(255, 255, 255, 0.65);
+  --glow: rgba(129, 199, 132, 0.35);
+}
+
+/* Dark Theme */
+[data-theme="dark"] body {
+  background:
+    linear-gradient(115deg, #0e3b23 0%, #144a2c 35%, #1a5a36 70%, #1f6a40 100%),
+    radial-gradient(900px 480px at 12% 8%, rgba(255,255,255,0.07), transparent 60%),
+    radial-gradient(1000px 560px at 88% 92%, rgba(255,255,255,0.06), transparent 60%);
+  color: var(--text-primary);
+}
+[data-theme="dark"] {
+  --bg-start: #1f6a40;
+  --bg-end: #144a2c;
+  --accent-1: #4caf50;
+  --accent-2: #2e7d32;
+  --text-primary: #e6f4ea;
+  --text-secondary: #b6d2c0;
+  --surface: rgba(20, 40, 30, 0.82);
+  --surface-border: rgba(200, 255, 220, 0.18);
+  --glow: rgba(76, 175, 80, 0.28);
+}
+
+/* Focus Mode: reduce distractions */
+body.focus-mode #glassHeader nav a,
+body.focus-mode #glassHeader nav button {
+  opacity: 0.25;
+  pointer-events: none;
+}
+body.focus-mode #glassHeader nav #focusToggle,
+body.focus-mode #glassHeader nav #themeToggle {
+  pointer-events: auto;
+  opacity: 1;
+}
+body.focus-mode .badge,
+body.focus-mode [data-counter],
+body.focus-mode .stat-number {
+  filter: blur(2px);
+}
+body.focus-mode .card {
+  box-shadow: none !important;
+}
+
+/* Utilities */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Buttons minimal overrides for better contrast in dark */
+[data-theme="dark"] .btn {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .btn.btn-secondary {
+  color: #0f2b1c !important;
+}
+
+

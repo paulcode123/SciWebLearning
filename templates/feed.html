@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Feed - SciWeb{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-stream icon"></i> Learning Feed</h1>
+    <p class="page-subtitle">Finite, goal-aligned blocks. No infinite scroll.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn" onclick="window.SciwebFocus && SciwebFocus.start(25, 'Consume one learning block')"><i class="fas fa-bullseye icon"></i> 25m Focus</button>
+        <button class="btn btn-secondary" id="nextBlockBtn"><i class="fas fa-forward icon"></i> Next Block</button>
+    </div>
+    <p style="color: var(--text-secondary); margin-top:8px;">You have 3 items in this block.</p>
+    <hr style="margin:14px 0; border:0; height:1px; background: rgba(0,0,0,0.08);">
+</div>
+
+<div class="grid grid-2" id="feedBlock">
+    {% for it in items %}
+    <div class="card" style="display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="badge">{{ it.type|capitalize }}</span>
+                <span style="color: var(--text-secondary); font-size:.9rem;">by <strong style="color: var(--text-primary);">{{ it.author }}</strong></span>
+            </div>
+            <span style="color: var(--text-secondary); font-size:.85rem;">{{ it.created }}</span>
+        </div>
+        <h3 style="color: var(--text-primary); margin-bottom:8px;">{{ it.title }}</h3>
+        <p style="color: var(--text-secondary);">{{ it.preview }}</p>
+        <div style="margin:10px 0;">
+            {% for c in it.concepts %}
+            <span class="badge" style="background: linear-gradient(45deg, #e0ffe8, #f0fff5);">#{{ c }}</span>
+            {% endfor %}
+        </div>
+        <div style="display:flex; gap:8px; margin-top:auto;">
+            <button class="btn" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-book-open icon"></i> Open</button>
+            <button class="btn btn-secondary" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-check icon"></i> Helpful ({{ it.helpfulness }})</button>
+        </div>
+    </div>
+    {% endfor %}
+    <!-- Placeholder to complete block to 3 items -->
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:180px; background: linear-gradient(135deg, rgba(168,230,207,0.25), rgba(220,237,193,0.3)); border: 2px dashed #b8e6b8;">
+        <i class="fas fa-lightbulb" style="color:#81c784; font-size:1.8rem;"></i>
+        <p style="margin-top:8px; color: var(--text-secondary);">Reflection incoming after this block.</p>
+    </div>
+</div>
+
+<div class="card" style="margin-top:16px; text-align:center;">
+    <p style="color: var(--text-secondary);">Reached the end of your learning block.</p>
+    <button class="btn" id="reflectBtn"><i class="fas fa-pen icon"></i> Reflect</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const cards = document.querySelectorAll('#feedBlock .card');
+    cards.forEach((c, i)=>{
+        c.style.opacity = '0'; c.style.transform = 'translateY(24px)';
+        c.style.animation = `fadeInUp .6s ease-out ${0.08*i+.2}s both`;
+    });
+    const reflect = document.getElementById('reflectBtn');
+    if (reflect) reflect.addEventListener('click', function(){
+        if (window.SciwebFocus) {
+            // End early to trigger reflection modal
+            window.SciwebFocus.stop();
+        }
+        // Fallback reflection if no active session
+        setTimeout(()=>{
+            const evt = new Event('click');
+            const focusToggle = document.getElementById('focusToggle');
+            if (focusToggle) focusToggle.dispatchEvent(evt); // reopen intent -> user can start again
+        }, 800);
+    });
+    const nextBlock = document.getElementById('nextBlockBtn');
+    if (nextBlock) nextBlock.addEventListener('click', function(){
+        alert('Great job! New block will be generated based on your goals.');
+    });
+});
+</script>
+{% endblock %}
+
+
