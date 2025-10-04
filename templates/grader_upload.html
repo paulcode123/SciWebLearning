@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Assignment - AI Grade Scanner{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('grader_home') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Grader
+    </a>
+</div>
+
+<div class="page-header" style="margin-bottom: 30px;">
+    <h1 class="page-title" style="font-size: 2.2rem;">
+        <i class="fas fa-upload icon"></i>
+        Upload Assignment
+    </h1>
+    <p class="page-subtitle" style="opacity:1; animation:none;">
+        Upload a photo or scan of handwritten work to get AI-powered grading
+    </p>
+</div>
+
+<div class="grid grid-2" style="gap:24px; align-items:start;">
+    <!-- Upload Form -->
+    <div class="card" style="background: var(--surface);">
+        <h2 style="color: var(--text-primary); margin-bottom:20px; display:flex; align-items:center;">
+            <i class="fas fa-file-upload icon" style="color:var(--accent-1);"></i>
+            Upload Work
+        </h2>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <!-- Drag and Drop Zone -->
+            <div id="dropZone" style="border: 3px dashed var(--accent-1); border-radius:16px; padding:50px 30px; text-align:center; cursor:pointer; transition: all 0.3s ease; background: linear-gradient(135deg, rgba(102,126,234,0.03), rgba(240,147,251,0.03)); position:relative; overflow:hidden;">
+                <div id="dropZoneContent">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:4rem; color:var(--accent-1); margin-bottom:16px; display:block; opacity:0.8;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom:8px;">Drag & Drop Your File Here</h3>
+                    <p style="color: var(--text-secondary); margin-bottom:16px;">or click to browse</p>
+                    <span class="badge" style="background:var(--gradient-accent); color:white; border:none;">
+                        Supports JPG, PNG, PDF, HEIC
+                    </span>
+                </div>
+                <div id="preview" style="display:none; position:relative;">
+                    <img id="previewImage" style="max-width:100%; max-height:300px; border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                    <button type="button" id="removeImage" style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.95); border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-times" style="color:#ff6b6b;"></i>
+                    </button>
+                </div>
+                <input type="file" id="fileInput" name="file" accept="image/*,.pdf,.heic" style="display:none;">
+            </div>
+
+            <!-- Assignment Details -->
+            <div style="margin-top:24px; display:grid; gap:16px;">
+                <div>
+                    <label for="title" style="display:block; color:var(--text-primary); font-weight:600; margin-bottom:8px;">
+                        <i class="fas fa-heading icon"></i>Assignment Title *
+                    </label>
+                    <input type="text" id="title" name="title" required
+                           placeholder="e.g., Math Homework Chapter 5"
+                           style="width:100%; padding:12px 16px; border: 2px solid var(--surface-border); border-radius:10px; font-size:1rem; transition: all 0.3s ease;">
+                </div>
+
+                <div>
+                    <label for="subject" style="display:block; color:var(--text-primary); font-weight:600; margin-bottom:8px;">
+                        <i class="fas fa-book icon"></i>Subject
+                    </label>
+                    <select id="subject" name="subject"
+                            style="width:100%; padding:12px 16px; border: 2px solid var(--surface-border); border-radius:10px; font-size:1rem; transition: all 0.3s ease;">
+                        <option value="">Select subject...</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Physics">Physics</option>
+                        <option value="Chemistry">Chemistry</option>
+                        <option value="Biology">Biology</option>
+                        <option value="English">English</option>
+                        <option value="History">History</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="project_id" style="display:block; color:var(--text-primary); font-weight:600; margin-bottom:8px;">
+                        <i class="fas fa-folder icon"></i>Link to Project (Optional)
+                    </label>
+                    <select id="project_id" name="project_id"
+                            style="width:100%; padding:12px 16px; border: 2px solid var(--surface-border); border-radius:10px; font-size:1rem;">
+                        <option value="">None - Standalone</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" class="btn" disabled
+                    style="width:100%; margin-top:24px; padding:14px; font-size:1.1rem; background:var(--gradient-primary); color:white; border:none;">
+                <i class="fas fa-check icon"></i>
+                Submit for Grading
+            </button>
+        </form>
+
+        <!-- Progress Bar -->
+        <div id="progressContainer" style="display:none; margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:var(--text-secondary); font-weight:600;">Uploading...</span>
+                <span id="progressPercent" style="color:var(--accent-1); font-weight:700;">0%</span>
+            </div>
+            <div style="background:rgba(102,126,234,0.1); height:8px; border-radius:10px; overflow:hidden;">
+                <div id="progressBar" style="background:var(--gradient-primary); height:100%; width:0%; transition: width 0.3s ease; border-radius:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info and Tips -->
+    <div>
+        <div class="card" style="background: linear-gradient(135deg, rgba(91,134,229,0.08), rgba(54,209,220,0.08)); margin-bottom:20px;">
+            <h3 style="color: var(--text-primary); margin-bottom:16px; display:flex; align-items:center;">
+                <i class="fas fa-lightbulb icon" style="color:var(--accent-2);"></i>
+                Tips for Best Results
+            </h3>
+            <ul style="color: var(--text-secondary); line-height:1.8; padding-left:24px; margin:0;">
+                <li>Ensure good lighting when taking photos</li>
+                <li>Keep the page flat and within frame</li>
+                <li>Use high resolution images (at least 1080p)</li>
+                <li>Make sure handwriting is legible</li>
+                <li>Avoid shadows or glare on the paper</li>
+                <li>Include the entire question and answer</li>
+            </ul>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(118,75,162,0.08), rgba(240,147,251,0.08)); margin-bottom:20px;">
+            <h3 style="color: var(--text-primary); margin-bottom:16px; display:flex; align-items:center;">
+                <i class="fas fa-info-circle icon" style="color:var(--accent-3);"></i>
+                What Happens Next?
+            </h3>
+            <div style="color: var(--text-secondary); line-height:1.8;">
+                <div style="display:flex; gap:12px; margin-bottom:12px;">
+                    <div style="background:var(--gradient-primary); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">1</div>
+                    <div>
+                        <strong style="color:var(--text-primary);">AI Analysis</strong><br>
+                        Our AI reads and understands your handwriting
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px; margin-bottom:12px;">
+                    <div style="background:var(--gradient-accent); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">2</div>
+                    <div>
+                        <strong style="color:var(--text-primary);">Problem Evaluation</strong><br>
+                        Each problem is graded individually
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <div style="background:var(--gradient-warm); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">3</div>
+                    <div>
+                        <strong style="color:var(--text-primary);">Detailed Feedback</strong><br>
+                        Get comments and suggestions for improvement
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(250,112,154,0.08), rgba(254,225,64,0.08));">
+            <h3 style="color: var(--text-primary); margin-bottom:16px; display:flex; align-items:center;">
+                <i class="fas fa-shield-alt icon" style="color:#fa709a;"></i>
+                Privacy & Security
+            </h3>
+            <p style="color: var(--text-secondary); line-height:1.7; margin:0;">
+                Your uploaded work is private and secure. Only you can view your submissions and grades.
+                We use industry-standard encryption to protect your data.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+#dropZone:hover {
+    border-color: var(--accent-2);
+    background: linear-gradient(135deg, rgba(102,126,234,0.06), rgba(240,147,251,0.06));
+    transform: scale(1.01);
+}
+
+#dropZone.dragover {
+    border-color: var(--accent-2);
+    background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(240,147,251,0.12));
+    border-width: 4px;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: var(--accent-1);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedFile = null;
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const uploadForm = document.getElementById('uploadForm');
+const submitBtn = document.getElementById('submitBtn');
+const preview = document.getElementById('preview');
+const previewImage = document.getElementById('previewImage');
+const dropZoneContent = document.getElementById('dropZoneContent');
+const removeImageBtn = document.getElementById('removeImage');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressPercent = document.getElementById('progressPercent');
+
+// Click to browse
+dropZone.addEventListener('click', () => {
+    if (!selectedFile) fileInput.click();
+});
+
+// Drag and drop handlers
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+// File input change
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+// Remove image
+removeImageBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectedFile = null;
+    fileInput.value = '';
+    preview.style.display = 'none';
+    dropZoneContent.style.display = 'block';
+    submitBtn.disabled = true;
+});
+
+function handleFile(file) {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/heic', 'application/pdf'];
+    if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.heic')) {
+        alert('Please upload a valid image or PDF file (JPG, PNG, PDF, HEIC)');
+        return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+
+    selectedFile = file;
+    submitBtn.disabled = false;
+
+    // Show preview for images
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            dropZoneContent.style.display = 'none';
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // For PDFs, just show filename
+        dropZoneContent.innerHTML = `
+            <i class="fas fa-file-pdf" style="font-size:4rem; color:#ff6b6b; margin-bottom:16px; display:block;"></i>
+            <h3 style="color: var(--text-primary); margin-bottom:8px;">${file.name}</h3>
+            <span class="badge" style="background:var(--gradient-success); color:white; border:none;">
+                ${(file.size / 1024 / 1024).toFixed(2)} MB
+            </span>
+        `;
+    }
+}
+
+// Form submission
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!selectedFile) {
+        alert('Please select a file to upload');
+        return;
+    }
+
+    const title = document.getElementById('title').value.trim();
+    if (!title) {
+        alert('Please enter an assignment title');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('title', title);
+    formData.append('subject', document.getElementById('subject').value);
+    formData.append('project_id', document.getElementById('project_id').value);
+
+    // Show progress
+    submitBtn.disabled = true;
+    progressContainer.style.display = 'block';
+
+    try {
+        // Simulate progress animation
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress) + '%';
+        }, 200);
+
+        const response = await axios.post('/api/grader/submit', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+
+        if (response.data.success) {
+            setTimeout(() => {
+                window.location.href = response.data.redirect_url;
+            }, 500);
+        } else {
+            throw new Error(response.data.error || 'Upload failed');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + (error.response?.data?.error || error.message));
+        submitBtn.disabled = false;
+        progressContainer.style.display = 'none';
+    }
+});
+
+// Animate on load
+document.addEventListener('DOMContentLoaded', function() {
+    dropZone.style.opacity = '0';
+    dropZone.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+        dropZone.style.transition = 'all 0.5s ease';
+        dropZone.style.opacity = '1';
+        dropZone.style.transform = 'scale(1)';
+    }, 100);
+});
+</script>
+{% endblock %}

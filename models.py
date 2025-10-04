@@ -79,3 +79,27 @@ class KnowledgeEdge(db.Model):
     relation = db.Column(db.String(120), nullable=False)  # derives, causes, references, etc.
     extra = db.Column(db.JSON, nullable=True)
 
+
+class GradeSubmission(db.Model):
+    __tablename__ = 'grade_submissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
+    title = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(120), nullable=True)
+    image_filename = db.Column(db.String(255), nullable=False)
+    image_path = db.Column(db.String(512), nullable=False)
+    status = db.Column(db.String(50), default='pending', nullable=False)  # pending, graded, error
+    overall_score = db.Column(db.Float, nullable=True)  # 0-100
+    total_points = db.Column(db.Float, nullable=True)
+    earned_points = db.Column(db.Float, nullable=True)
+    ai_feedback = db.Column(db.Text, nullable=True)
+    grading_rubric = db.Column(db.JSON, nullable=True)
+    annotations = db.Column(db.JSON, nullable=True)  # Store marked-up positions
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    graded_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', backref='grade_submissions', lazy=True)
+    project = db.relationship('Project', backref='grade_submissions', lazy=True)
+

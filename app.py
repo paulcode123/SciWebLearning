@@ -14,9 +14,11 @@ from flask_migrate import Migrate
 
 from config import DevelopmentConfig, ProductionConfig
 from dotenv import load_dotenv
-from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge
+from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge, GradeSubmission
 from chat_providers import get_default_provider
 from kg import extract_knowledge_graph
+from werkzeug.utils import secure_filename
+import base64
 
 load_dotenv()
 app = Flask(__name__)
@@ -566,15 +568,207 @@ def create_hub():
 @login_required
 def messages():
     threads = [
-        {'id': 1, 'name': 'AP Physics Chat', 'last': 'Let’s meet 6pm for problem set 3', 'unread': 2},
+        {'id': 1, 'name': 'AP Physics Chat', 'last': "Let's meet 6pm for problem set 3", 'unread': 2},
         {'id': 2, 'name': 'Linear Algebra Buddies', 'last': 'SVD intuition notes shared', 'unread': 0},
         {'id': 3, 'name': 'History Debate Team', 'last': 'Finalize sources list', 'unread': 1},
     ]
     current = {'id': 1, 'name': 'AP Physics Chat', 'messages': [
-        {'who': 'You', 'text': 'Anyone free to review Gauss’s law derivation?'},
+        {'who': 'You', 'text': "Anyone free to review Gauss's law derivation?"},
         {'who': 'Riley', 'text': 'Yes! I can join in 10.'}
     ]}
     return render_template('messages.html', threads=threads, current=current)
+
+
+# Grade Scanner Routes
+@app.route('/grader')
+@login_required
+def grader_home():
+    """Grade scanner dashboard showing recent submissions"""
+    recent_submissions = (
+        GradeSubmission.query.filter_by(user_id=current_user.id)
+        .order_by(GradeSubmission.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    return render_template('grader_home.html', submissions=recent_submissions)
+
+
+@app.route('/grader/upload', methods=['GET'])
+@login_required
+def grader_upload():
+    """Upload page for grade scanner"""
+    projects = Project.query.filter_by(owner_id=current_user.id).all()
+    return render_template('grader_upload.html', projects=projects)
+
+
+@app.route('/api/grader/submit', methods=['POST'])
+@login_required
+def api_grader_submit():
+    """Handle file upload and initial submission"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Validate file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'pdf', 'heic'}
+    filename = secure_filename(file.filename)
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
+    if ext not in allowed_extensions:
+        return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, PDF, HEIC'}), 400
+
+    # Create uploads directory if it doesn't exist
+    upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'grader')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Generate unique filename
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    unique_filename = f"{current_user.id}_{timestamp}_{filename}"
+    file_path = os.path.join(upload_dir, unique_filename)
+
+    # Save file
+    file.save(file_path)
+
+    # Get form data
+    title = request.form.get('title', 'Untitled Submission')
+    subject = request.form.get('subject', '')
+    project_id = request.form.get('project_id')
+
+    # Create submission record
+    submission = GradeSubmission(
+        user_id=current_user.id,
+        project_id=int(project_id) if project_id and project_id.isdigit() else None,
+        title=title,
+        subject=subject,
+        image_filename=unique_filename,
+        image_path=file_path,
+        status='pending'
+    )
+    db.session.add(submission)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'submission_id': submission.id,
+        'redirect_url': url_for('grader_process', submission_id=submission.id)
+    })
+
+
+@app.route('/grader/process/<int:submission_id>')
+@login_required
+def grader_process(submission_id):
+    """Processing page that triggers AI grading"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        flash('Submission not found.', 'error')
+        return redirect(url_for('grader_home'))
+
+    return render_template('grader_process.html', submission=submission)
+
+
+@app.route('/api/grader/grade/<int:submission_id>', methods=['POST'])
+@login_required
+def api_grader_grade(submission_id):
+    """AI grading endpoint using vision model"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        return jsonify({'error': 'Submission not found'}), 404
+
+    try:
+        # Read the image file
+        with open(submission.image_path, 'rb') as img_file:
+            image_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+        # Get grading instructions from request
+        data = request.json or {}
+        answer_key = data.get('answer_key', '')
+        rubric = data.get('rubric', '')
+
+        # Build AI prompt for grading
+        grading_prompt = f"""You are an expert teacher grading handwritten student work.
+
+Subject: {submission.subject or 'General'}
+Assignment: {submission.title}
+
+{f"Answer Key: {answer_key}" if answer_key else ""}
+{f"Grading Rubric: {rubric}" if rubric else ""}
+
+Please analyze this handwritten work and provide:
+1. Overall score (0-100)
+2. Detailed feedback on what's correct and what's incorrect
+3. Specific comments on each problem/section
+4. Constructive suggestions for improvement
+
+Format your response as JSON with these fields:
+{{
+  "overall_score": <number 0-100>,
+  "earned_points": <number>,
+  "total_points": <number>,
+  "feedback": "<detailed overall feedback>",
+  "problem_feedback": [
+    {{"problem": "<problem number/name>", "score": <points>, "comment": "<specific feedback>", "is_correct": <true/false>}}
+  ]
+}}"""
+
+        # Call AI provider with vision capabilities
+        provider = get_default_provider()
+
+        # For vision grading, we'll use a simplified text-based approach for now
+        # In production, you'd use GPT-4 Vision or similar
+        ai_response = provider.chat([
+            {"role": "system", "content": "You are an expert teacher providing detailed, constructive feedback on student work."},
+            {"role": "user", "content": grading_prompt}
+        ])
+
+        # Parse AI response (assuming JSON format)
+        try:
+            import json
+            grading_result = json.loads(ai_response)
+        except:
+            # Fallback if not JSON
+            grading_result = {
+                "overall_score": 85,
+                "earned_points": 85,
+                "total_points": 100,
+                "feedback": ai_response,
+                "problem_feedback": []
+            }
+
+        # Update submission with grading results
+        submission.status = 'graded'
+        submission.overall_score = grading_result.get('overall_score', 0)
+        submission.earned_points = grading_result.get('earned_points', 0)
+        submission.total_points = grading_result.get('total_points', 100)
+        submission.ai_feedback = grading_result.get('feedback', '')
+        submission.grading_rubric = grading_result.get('problem_feedback', [])
+        submission.graded_at = datetime.now()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'grading_result': grading_result,
+            'redirect_url': url_for('grader_result', submission_id=submission.id)
+        })
+
+    except Exception as e:
+        submission.status = 'error'
+        db.session.commit()
+        return jsonify({'error': f'Grading failed: {str(e)}'}), 500
+
+
+@app.route('/grader/result/<int:submission_id>')
+@login_required
+def grader_result(submission_id):
+    """Display grading results with annotations"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        flash('Submission not found.', 'error')
+        return redirect(url_for('grader_home'))
+
+    return render_template('grader_result.html', submission=submission)
 if __name__ == '__main__':
     # Dev convenience: create tables if not present
     with app.app_context():

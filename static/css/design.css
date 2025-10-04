@@ -1,35 +1,49 @@
-/* SciWeb Design System: variables, dark theme, focus-mode */
+/* SciWeb Design System: Premium Gradient UI */
 
 :root {
-  --bg-start: #a8e6cf;
-  --bg-end: #dcedc1;
-  --accent-1: #81c784;
-  --accent-2: #66bb6a;
-  --text-primary: #2d5016;
-  --text-secondary: #4a7c59;
-  --surface: rgba(255, 255, 255, 0.92);
-  --surface-border: rgba(255, 255, 255, 0.65);
-  --glow: rgba(129, 199, 132, 0.35);
+  /* Vibrant Purple-Blue Gradient System */
+  --bg-start: #667eea;
+  --bg-mid: #764ba2;
+  --bg-end: #f093fb;
+  --accent-1: #5b86e5;
+  --accent-2: #36d1dc;
+  --accent-3: #f093fb;
+  --accent-4: #667eea;
+  --text-primary: #1a1f36;
+  --text-secondary: #4a5568;
+  --surface: rgba(255, 255, 255, 0.98);
+  --surface-border: rgba(255, 255, 255, 0.9);
+  --glow: rgba(102, 126, 234, 0.4);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  --gradient-accent: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+  --gradient-warm: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --gradient-success: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 30px 60px -15px rgba(102, 126, 234, 0.35);
 }
 
-/* Dark Theme */
+/* Dark Theme - Premium Purple-Blue */
 [data-theme="dark"] body {
   background:
-    linear-gradient(115deg, #0e3b23 0%, #144a2c 35%, #1a5a36 70%, #1f6a40 100%),
-    radial-gradient(900px 480px at 12% 8%, rgba(255,255,255,0.07), transparent 60%),
-    radial-gradient(1000px 560px at 88% 92%, rgba(255,255,255,0.06), transparent 60%);
+    linear-gradient(115deg, #1a1f36 0%, #2d1b69 35%, #1e3a8a 70%, #312e81 100%),
+    radial-gradient(900px 480px at 12% 8%, rgba(102,126,234,0.15), transparent 60%),
+    radial-gradient(1000px 560px at 88% 92%, rgba(240,147,251,0.12), transparent 60%);
   color: var(--text-primary);
 }
 [data-theme="dark"] {
-  --bg-start: #1f6a40;
-  --bg-end: #144a2c;
-  --accent-1: #4caf50;
-  --accent-2: #2e7d32;
-  --text-primary: #e6f4ea;
-  --text-secondary: #b6d2c0;
-  --surface: rgba(20, 40, 30, 0.82);
-  --surface-border: rgba(200, 255, 220, 0.18);
-  --glow: rgba(76, 175, 80, 0.28);
+  --bg-start: #312e81;
+  --bg-mid: #2d1b69;
+  --bg-end: #1e3a8a;
+  --accent-1: #818cf8;
+  --accent-2: #a78bfa;
+  --accent-3: #f0abfc;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --surface: rgba(31, 41, 55, 0.92);
+  --surface-border: rgba(107, 114, 128, 0.25);
+  --glow: rgba(129, 140, 248, 0.35);
+  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #f0abfc 100%);
+  --gradient-accent: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
 }
 
 /* Focus Mode: reduce distractions */

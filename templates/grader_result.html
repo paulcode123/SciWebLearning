@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Results - {{ submission.title }}{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('grader_home') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Grader
+    </a>
+</div>
+
+<!-- Score Header -->
+<div class="card" style="margin-bottom:24px; background:var(--gradient-primary); color:white; border:none; text-align:center; padding:40px 30px;">
+    <div style="max-width:800px; margin:0 auto;">
+        <div style="width:120px; height:120px; margin:0 auto 20px; border-radius:50%; background:white; display:flex; align-items:center; justify-content:center; box-shadow: 0 12px 40px rgba(0,0,0,0.2); position:relative;">
+            <svg style="position:absolute; inset:0; transform: rotate(-90deg);">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(102,126,234,0.2)" stroke-width="8"></circle>
+                <circle id="scoreCircle" cx="60" cy="60" r="54" fill="none" stroke="url(#scoreGradient)" stroke-width="8" stroke-dasharray="339.3" stroke-dashoffset="0" stroke-linecap="round" style="transition: stroke-dashoffset 1.5s ease;"></circle>
+                <defs>
+                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#36d1dc;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#5b86e5;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div style="font-size:2.5rem; font-weight:700; color:var(--accent-1);">
+                <span id="displayScore">0</span>%
+            </div>
+        </div>
+        <h1 style="color:white; font-size:2rem; margin-bottom:10px;">{{ submission.title }}</h1>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">
+            {% if submission.subject %}
+            <span class="badge" style="background:rgba(255,255,255,0.25); color:white; border:1px solid rgba(255,255,255,0.4);">
+                <i class="fas fa-book icon"></i>{{ submission.subject }}
+            </span>
+            {% endif %}
+            <span class="badge" style="background:rgba(255,255,255,0.25); color:white; border:1px solid rgba(255,255,255,0.4);">
+                <i class="fas fa-calendar icon"></i>{{ submission.graded_at.strftime('%b %d, %Y') if submission.graded_at else submission.created_at.strftime('%b %d, %Y') }}
+            </span>
+            {% if submission.earned_points and submission.total_points %}
+            <span class="badge" style="background:rgba(255,255,255,0.25); color:white; border:1px solid rgba(255,255,255,0.4);">
+                <i class="fas fa-star icon"></i>{{ submission.earned_points }} / {{ submission.total_points }} points
+            </span>
+            {% endif %}
+        </div>
+        <p style="color:rgba(255,255,255,0.9); font-size:1.05rem;">
+            {% if submission.overall_score >= 90 %}
+                <i class="fas fa-trophy"></i> Excellent work! Keep it up!
+            {% elif submission.overall_score >= 80 %}
+                <i class="fas fa-thumbs-up"></i> Great job! You're doing well!
+            {% elif submission.overall_score >= 70 %}
+                <i class="fas fa-smile"></i> Good effort! Room for improvement.
+            {% elif submission.overall_score >= 60 %}
+                <i class="fas fa-meh"></i> Fair work. Review the feedback below.
+            {% else %}
+                <i class="fas fa-book-reader"></i> Keep practicing! Review the concepts.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-2" style="gap:24px; align-items:start;">
+    <!-- AI Feedback -->
+    <div>
+        <div class="card" style="margin-bottom:20px;">
+            <h2 style="color: var(--text-primary); margin-bottom:20px; display:flex; align-items:center;">
+                <i class="fas fa-comments icon" style="color:var(--accent-1);"></i>
+                AI Teacher Feedback
+            </h2>
+            <div style="background: linear-gradient(135deg, rgba(102,126,234,0.05), rgba(240,147,251,0.05)); padding:20px; border-radius:12px; border-left:4px solid var(--accent-1);">
+                <p style="color: var(--text-secondary); line-height:1.8; white-space:pre-wrap; margin:0;">{{ submission.ai_feedback or 'No detailed feedback available.' }}</p>
+            </div>
+        </div>
+
+        <!-- Problem-by-Problem Feedback -->
+        {% if submission.grading_rubric %}
+        <div class="card">
+            <h2 style="color: var(--text-primary); margin-bottom:20px; display:flex; align-items:center;">
+                <i class="fas fa-list-check icon" style="color:var(--accent-2);"></i>
+                Problem Breakdown
+            </h2>
+            <div style="display:grid; gap:16px;">
+                {% for item in submission.grading_rubric %}
+                <div class="problem-item" style="background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(245,247,250,0.8)); padding:18px; border-radius:12px; border-left: 4px solid {{ '#13f1fc' if item.is_correct else '#ff6b6b' }};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h4 style="color: var(--text-primary); margin:0; font-size:1.1rem;">
+                            {{ item.problem }}
+                        </h4>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            {% if item.is_correct %}
+                            <span class="badge" style="background:var(--gradient-success); color:white; border:none;">
+                                <i class="fas fa-check icon"></i>Correct
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color:white; border:none;">
+                                <i class="fas fa-times icon"></i>Incorrect
+                            </span>
+                            {% endif %}
+                            {% if item.score is defined %}
+                            <span class="badge" style="background:var(--gradient-accent); color:white; border:none;">
+                                {{ item.score }} pts
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); margin:0; line-height:1.6;">
+                        {{ item.comment }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Submission Image and Actions -->
+    <div>
+        <div class="card" style="margin-bottom:20px;">
+            <h3 style="color: var(--text-primary); margin-bottom:16px; display:flex; align-items:center;">
+                <i class="fas fa-image icon" style="color:var(--accent-3);"></i>
+                Your Submission
+            </h3>
+            <div style="border-radius:12px; overflow:hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.12); background:#f5f7fa;">
+                <img src="{{ url_for('static', filename='uploads/grader/' + submission.image_filename) }}"
+                     alt="{{ submission.title }}"
+                     style="width:100%; height:auto; display:block;">
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(91,134,229,0.08), rgba(54,209,220,0.08)); margin-bottom:20px;">
+            <h3 style="color: var(--text-primary); margin-bottom:16px; display:flex; align-items:center;">
+                <i class="fas fa-tasks icon" style="color:var(--accent-1);"></i>
+                Quick Actions
+            </h3>
+            <div style="display:grid; gap:10px;">
+                <a href="{{ url_for('grader_upload') }}" class="btn" style="width:100%; background:var(--gradient-primary); color:white; border:none;">
+                    <i class="fas fa-upload icon"></i>
+                    Upload Another Assignment
+                </a>
+                <button onclick="window.print()" class="btn" style="width:100%;">
+                    <i class="fas fa-print icon"></i>
+                    Print Results
+                </button>
+                <button onclick="shareResults()" class="btn btn-secondary" style="width:100%;">
+                    <i class="fas fa-share icon"></i>
+                    Share Results
+                </button>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(250,112,154,0.08), rgba(254,225,64,0.08));">
+            <h3 style="color: var(--text-primary); margin-bottom:12px; display:flex; align-items:center;">
+                <i class="fas fa-lightbulb icon" style="color:#fa709a;"></i>
+                Next Steps
+            </h3>
+            <ul style="color: var(--text-secondary); line-height:1.8; padding-left:24px; margin:0;">
+                <li>Review the AI feedback carefully</li>
+                <li>Practice similar problems</li>
+                <li>Ask your teacher for clarification</li>
+                <li>Try the problems again and resubmit</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.problem-item {
+    animation: slideInLeft 0.5s ease-out both;
+}
+
+.problem-item:nth-child(1) { animation-delay: 0.1s; }
+.problem-item:nth-child(2) { animation-delay: 0.2s; }
+.problem-item:nth-child(3) { animation-delay: 0.3s; }
+.problem-item:nth-child(4) { animation-delay: 0.4s; }
+.problem-item:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media print {
+    .back-nav, .btn, #glassHeader, #spiderAgent, #gradientVeil, #bgLayer {
+        display: none !important;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const actualScore = {{ submission.overall_score or 0 }};
+
+// Animate score counter and circle
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreDisplay = document.getElementById('displayScore');
+    const scoreCircle = document.getElementById('scoreCircle');
+    const circumference = 339.3;
+    const offset = circumference - (circumference * actualScore / 100);
+
+    let currentScore = 0;
+    const duration = 1500; // ms
+    const increment = actualScore / (duration / 16);
+
+    function updateScore() {
+        currentScore += increment;
+        if (currentScore >= actualScore) {
+            currentScore = actualScore;
+            scoreDisplay.textContent = Math.round(actualScore);
+            scoreCircle.style.strokeDashoffset = offset;
+        } else {
+            scoreDisplay.textContent = Math.round(currentScore);
+            const currentOffset = circumference - (circumference * currentScore / 100);
+            scoreCircle.style.strokeDashoffset = currentOffset;
+            requestAnimationFrame(updateScore);
+        }
+    }
+
+    setTimeout(updateScore, 500);
+});
+
+function shareResults() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ submission.title }} - Results',
+            text: `I scored {{ submission.overall_score|round }}% on {{ submission.title }}!`,
+            url: window.location.href
+        }).catch(err => console.log('Share failed:', err));
+    } else {
+        // Fallback: copy link
+        navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+    }
+}
+</script>
+{% endblock %}

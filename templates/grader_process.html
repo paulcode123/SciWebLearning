@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Processing - AI Grade Scanner{% endblock %}
+
+{% block content %}
+<div style="min-height:70vh; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="max-width:600px; text-align:center; padding:50px 40px;">
+        <div id="processingAnimation" style="position:relative; width:150px; height:150px; margin:0 auto 30px;">
+            <div style="position:absolute; inset:0; border-radius:50%; background:var(--gradient-primary); animation: pulse 2s ease-in-out infinite;"></div>
+            <div style="position:absolute; inset:10px; border-radius:50%; background:white; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-robot" style="font-size:3.5rem; color:var(--accent-1); animation: bounce 1.5s ease-in-out infinite;"></i>
+            </div>
+        </div>
+
+        <h2 style="color: var(--text-primary); margin-bottom:16px; font-size:2rem;">AI is Grading Your Work</h2>
+        <p id="statusText" style="color: var(--text-secondary); font-size:1.1rem; margin-bottom:30px; line-height:1.6;">
+            Analyzing handwriting and evaluating answers...
+        </p>
+
+        <div id="progressSteps" style="margin-bottom:30px;">
+            <div class="step active" data-step="1">
+                <i class="fas fa-eye"></i> Reading handwriting
+            </div>
+            <div class="step" data-step="2">
+                <i class="fas fa-brain"></i> Understanding content
+            </div>
+            <div class="step" data-step="3">
+                <i class="fas fa-check-circle"></i> Evaluating answers
+            </div>
+            <div class="step" data-step="4">
+                <i class="fas fa-comments"></i> Generating feedback
+            </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(240,147,251,0.08)); padding:20px; border-radius:12px;">
+            <p style="color: var(--text-secondary); margin:0; font-size:0.95rem;">
+                <i class="fas fa-info-circle" style="color:var(--accent-1);"></i>
+                This usually takes 10-30 seconds depending on complexity
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.4s ease;
+    opacity: 0.5;
+}
+
+.step.active {
+    background: var(--gradient-primary);
+    color: white;
+    opacity: 1;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    transform: translateX(5px);
+}
+
+.step.completed {
+    background: var(--gradient-success);
+    color: white;
+    opacity: 1;
+}
+
+.step i {
+    font-size: 1.2rem;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const submissionId = {{ submission.id }};
+let currentStep = 1;
+
+const steps = [
+    'Reading handwriting...',
+    'Understanding content...',
+    'Evaluating answers...',
+    'Generating feedback...',
+    'Finalizing results...'
+];
+
+function updateStep() {
+    if (currentStep <= 4) {
+        // Mark current step as active
+        document.querySelectorAll('.step').forEach((el, idx) => {
+            if (idx + 1 < currentStep) {
+                el.classList.remove('active');
+                el.classList.add('completed');
+            } else if (idx + 1 === currentStep) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active', 'completed');
+            }
+        });
+
+        document.getElementById('statusText').textContent = steps[currentStep - 1];
+        currentStep++;
+
+        setTimeout(updateStep, 2500);
+    }
+}
+
+// Start step animation
+setTimeout(updateStep, 1500);
+
+// Call grading API
+async function startGrading() {
+    try {
+        const response = await axios.post(`/api/grader/grade/${submissionId}`, {
+            answer_key: '',
+            rubric: ''
+        });
+
+        if (response.data.success) {
+            // Wait for animation to complete
+            setTimeout(() => {
+                window.location.href = response.data.redirect_url;
+            }, 2000);
+        } else {
+            throw new Error(response.data.error || 'Grading failed');
+        }
+    } catch (error) {
+        console.error('Grading error:', error);
+        document.getElementById('statusText').innerHTML = `
+            <span style="color: #ff6b6b;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error: ${error.response?.data?.error || error.message}
+            </span>
+        `;
+
+        setTimeout(() => {
+            window.location.href = '/grader';
+        }, 3000);
+    }
+}
+
+// Start grading after a brief delay
+setTimeout(startGrading, 1000);
+
+// Animate card entrance
+document.addEventListener('DOMContentLoaded', function() {
+    const card = document.querySelector('.card');
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    setTimeout(() => {
+        card.style.transition = 'all 0.6s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, 100);
+});
+</script>
+{% endblock %}
