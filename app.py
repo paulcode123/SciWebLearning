@@ -19,6 +19,11 @@ from chat_providers import get_default_provider
 from kg import extract_knowledge_graph
 
 load_dotenv()
+# Also load server-managed secrets from instance folder if present
+try:
+    load_dotenv(os.path.join(os.path.dirname(__file__), 'instance', 'secrets.env'))
+except Exception:
+    pass
 app = Flask(__name__)
 
 # Config

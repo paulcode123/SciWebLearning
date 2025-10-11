@@ -20,7 +20,7 @@
     </div>
     <div>
       {% for t in threads %}
-      <a href="#" class="thread-item" style="display:block; padding:12px 16px; text-decoration:none; border-bottom:1px solid rgba(0,0,0,0.05);">
+      <a href="#" class="thread-item" data-name="{{ t.name }}" style="display:block; padding:12px 16px; text-decoration:none; border-bottom:1px solid rgba(0,0,0,0.05);">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div>
             <div style="color: var(--text-primary); font-weight:600;">{{ t.name }}</div>
@@ -66,6 +66,22 @@ document.addEventListener('DOMContentLoaded', function(){
   const log = document.getElementById('msgLog');
   const input = document.getElementById('msgInput');
   const send = document.getElementById('msgSend');
+  // Switch thread behavior (demo)
+  items.forEach((it)=>{
+    it.addEventListener('click', function(e){
+      e.preventDefault();
+      const name = this.dataset.name || 'Thread';
+      const header = document.querySelector('.card h3');
+      if (header) header.innerHTML = `<i class="fas fa-hashtag icon"></i> ${name}`;
+      if (log) {
+        log.innerHTML = '';
+        const welcome = document.createElement('div');
+        welcome.style.color = 'var(--text-secondary)';
+        welcome.textContent = `Switched to ${name}. Say hi!`;
+        log.appendChild(welcome);
+      }
+    });
+  });
   function append(who, text){
     const wrap = document.createElement('div');
     wrap.style.margin = '8px 0';

@@ -20,7 +20,11 @@
 
 <div style="display: flex; flex-direction: column; height: calc(100vh - 180px); max-height: 680px;">
     <!-- Chat Messages Container -->
-    <div id="chatMessages" style="flex: 1; background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(245,255,245,0.96)); border-radius: 16px 16px 0 0; padding: 22px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3);">
+    <div id="chatMessages" style="flex: 1; background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(245,255,245,0.96)); border-radius: 16px 16px 0 0; padding: 22px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3); position: relative;">
+        <!-- Mascot Container -->
+        <div id="mascotContainer" aria-hidden="true" style="position:absolute; right:16px; top:16px; width:120px; height:120px; pointer-events:none;">
+            <!-- SVG injected by script -->
+        </div>
         <!-- Welcome Message -->
         <div class="message ai-message" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: flex-start; gap: 15px;">
@@ -224,6 +228,23 @@
     outline: none;
     box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.2);
 }
+
+/* Mascot animations */
+@keyframes mascotBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+@keyframes mascotBlink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.1); }
+}
+@keyframes mascotTalk {
+    0%, 100% { transform: scaleY(0.8); }
+    50% { transform: scaleY(1.2); }
+}
+.mascot { animation: mascotBob 2.6s ease-in-out infinite; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.12)); }
+.mascot .eye { transform-origin: center; animation: mascotBlink 5s ease-in-out infinite; }
+.mascot.talking .mouth { transform-origin: center; animation: mascotTalk .5s ease-in-out infinite; }
 </style>
 {% endblock %}
 
@@ -476,6 +497,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load existing messages
     if (Array.isArray(INITIAL_MESSAGES) && INITIAL_MESSAGES.length > 0) {
         INITIAL_MESSAGES.forEach(m => addMessage(m.content, m.role === 'user'));
+    }
+
+    // Inject Duolingo-style mascot based on conversation style/title
+    const container = document.getElementById('mascotContainer');
+    if (container) {
+        const styleName = {{ (conversation.interaction_style or '') | tojson | safe }}.toLowerCase();
+        const isDerivation = styleName.includes('derivation') || {{ (conversation.title or '') | tojson | safe }}.toLowerCase().includes('derivation') || {{ (project.title or '') | tojson | safe }}.toLowerCase().includes('physics');
+        const svgNewton = `
+<svg class="mascot" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Isaac Newton mascot">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <!-- Head -->
+  <circle cx="60" cy="50" r="28" fill="url(#g1)"/>
+  <!-- Hair wig -->
+  <path d="M34 52c2 14 10 24 26 24s24-10 26-24c-6 6-14 9-26 9s-20-3-26-9z" fill="#d1d5db"/>
+  <!-- Eyes -->
+  <ellipse class="eye" cx="50" cy="48" rx="4" ry="5" fill="#fff"/>
+  <ellipse class="eye" cx="70" cy="48" rx="4" ry="5" fill="#fff"/>
+  <circle cx="50" cy="49" r="2" fill="#111827"/>
+  <circle cx="70" cy="49" r="2" fill="#111827"/>
+  <!-- Mouth -->
+  <rect class="mouth" x="54" y="60" width="12" height="4" rx="2" fill="#111827"/>
+  <!-- Apple -->
+  <g transform="translate(88,22)">
+    <circle cx="8" cy="8" r="7" fill="#ef4444"/>
+    <rect x="7.5" y="0" width="2" height="4" fill="#065f46"/>
+    <path d="M7.5 0 C6 2, 5 3, 4 4" stroke="#065f46" stroke-width="1.5" fill="none"/>
+  </g>
+  <!-- Book -->
+  <rect x="35" y="82" width="50" height="14" rx="4" fill="#0ea5e9"/>
+  <rect x="38" y="84" width="44" height="10" rx="3" fill="#fff"/>
+</svg>`;
+        container.innerHTML = isDerivation ? svgNewton : '';
     }
 });
 </script>

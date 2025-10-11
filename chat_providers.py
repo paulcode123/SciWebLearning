@@ -26,26 +26,11 @@ class OpenAIProvider(ChatProvider):
                 temperature=0.7,
             )
             return completion.choices[0].message.content or ''
-        # Fallback lightweight guidance when no API key is configured
-        # Heuristic: echo last user message, add Socratic prompts and next steps
-        last_user = next((m['content'] for m in reversed(messages) if m.get('role') == 'user'), '')
-        style_hint = next((m['content'] for m in messages if m.get('role') == 'system'), '')
-        prompt = last_user.strip() or 'your topic'
-        parts = [
-            "(Local mode) Let's explore this together without an external model.",
-            f"You asked about: {prompt}.",
-        ]
-        if 'Socratic' in style_hint:
-            parts.append("First, what do you already know about this? What seems unclear?")
-        parts.extend([
-            "Proposed steps:",
-            "1) Define core terms and assumptions",
-            "2) Work a small example",
-            "3) Generalize and check edge cases",
-            "4) Reflect: where does this connect in a broader concept map?",
-            "Reply with your initial thoughts or ask for a step-by-step outline.",
-        ])
-        return "\n".join(parts)
+        # Explicit guidance if provider is unavailable to avoid confusing "local mode" output
+        return (
+            "Provider unavailable: missing OPENAI_API_KEY. Add it to your environment or .env, then "
+            "refresh and try again."
+        )
 
 
 def get_default_provider() -> ChatProvider:

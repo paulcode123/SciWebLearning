@@ -452,6 +452,8 @@
                 <a href="{{ url_for('dashboard') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Dashboard</a>
                 <a href="{{ url_for('assistant_hub') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Assistant</a>
                 <a href="{{ url_for('style') }}" class="btn btn-secondary" style="padding:8px 14px; font-size: .95rem;">Styles</a>
+                <button id="focusToggle" class="btn btn-secondary" style="padding:8px 14px; font-size:.95rem;" type="button"><i class="fas fa-bullseye icon"></i> Focus</button>
+                <button id="themeToggle" class="btn" style="padding:8px 14px; font-size:.95rem;" type="button"><i class="fas fa-moon icon"></i> Theme</button>
                 {% if current_user.is_authenticated %}
                 <span style="color: var(--text-secondary); font-size:.95rem; margin:0 6px;">Hi, {{ current_user.display_name or current_user.email }}</span>
                 <a href="{{ url_for('logout') }}" class="btn" style="padding:8px 14px; font-size: .95rem;">Logout</a>

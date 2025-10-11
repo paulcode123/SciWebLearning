@@ -20,7 +20,7 @@
         </div>
         <div style="margin-top:auto; display:flex; gap:8px;">
             <a class="btn" href="{{ url_for('study_room') }}"><i class="fas fa-door-open icon"></i> Enter Study</a>
-            <button class="btn btn-secondary"><i class="fas fa-user-plus icon"></i> Join</button>
+            <button class="btn btn-secondary join-btn"><i class="fas fa-user-plus icon"></i> Join</button>
         </div>
     </div>
     {% endfor %}
@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', function(){
         c.style.opacity = '0'; c.style.transform = 'translateY(24px)';
         c.style.animation = `fadeInUp .6s ease-out ${0.08*i+.2}s both`;
     });
+  // Join button behavior
+  document.querySelectorAll('.join-btn').forEach((b)=>{
+    b.addEventListener('click', function(){ this.disabled = true; this.textContent = 'Joined'; });
+  });
 });
 </script>
 {% endblock %}

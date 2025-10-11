@@ -32,8 +32,8 @@
             {% endfor %}
         </div>
         <div style="display:flex; gap:8px; margin-top:auto;">
-            <button class="btn" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-book-open icon"></i> Open</button>
-            <button class="btn btn-secondary" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-check icon"></i> Helpful ({{ it.helpfulness }})</button>
+            <button class="btn open-item" data-title="{{ it.title }}" data-preview="{{ it.preview }}" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-book-open icon"></i> Open</button>
+            <button class="btn btn-secondary helpful-item" data-helpfulness="{{ it.helpfulness }}" style="padding:8px 12px; font-size:.95rem;"><i class="fas fa-check icon"></i> Helpful ({{ it.helpfulness }})</button>
         </div>
     </div>
     {% endfor %}
@@ -74,6 +74,42 @@ document.addEventListener('DOMContentLoaded', function(){
     const nextBlock = document.getElementById('nextBlockBtn');
     if (nextBlock) nextBlock.addEventListener('click', function(){
         alert('Great job! New block will be generated based on your goals.');
+    });
+
+    // Simple preview modal for Open
+    function ensureModal(){
+        let m = document.getElementById('feedPreviewModal');
+        if (m) return m;
+        m = document.createElement('div');
+        m.id = 'feedPreviewModal';
+        m.style.position = 'fixed'; m.style.inset = '0'; m.style.display = 'none';
+        m.style.alignItems = 'center'; m.style.justifyContent = 'center'; m.style.background = 'rgba(0,0,0,0.35)'; m.style.zIndex = '1600';
+        m.innerHTML = '<div class="card" style="max-width:600px; width:92%;"><h3 id="pvTitle" style="color: var(--text-primary);"></h3><p id="pvText" style="color: var(--text-secondary);"></p><div style="display:flex; justify-content:flex-end; gap:8px;"><button id="pvClose" class="btn btn-secondary">Close</button><button id="pvMarkHelpful" class="btn">Helpful</button></div></div>';
+        document.body.appendChild(m);
+        m.addEventListener('click', (e)=>{ if (e.target === m) m.style.display='none'; });
+        m.querySelector('#pvClose').addEventListener('click', ()=> m.style.display='none');
+        return m;
+    }
+    document.querySelectorAll('.open-item').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const m = ensureModal();
+            m.style.display = 'flex';
+            const t = m.querySelector('#pvTitle'); const p = m.querySelector('#pvText');
+            if (t) t.textContent = this.dataset.title || 'Preview';
+            if (p) p.textContent = this.dataset.preview || '';
+            const mark = m.querySelector('#pvMarkHelpful');
+            if (mark) {
+                mark.onclick = ()=>{ alert('Marked helpful.'); m.style.display='none'; };
+            }
+        });
+    });
+    // Helpful counter client-side increment
+    document.querySelectorAll('.helpful-item').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const cur = parseInt(this.dataset.helpfulness || '0', 10) + 1;
+            this.dataset.helpfulness = String(cur);
+            this.innerHTML = '<i class="fas fa-check icon"></i> Helpful ('+cur+')';
+        });
     });
 });
 </script>
