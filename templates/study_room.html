@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
     <h1 class="page-title"><i class="fas fa-door-open icon"></i> {{ room.title }}</h1>
-    <p class="page-subtitle">Shared focus with timers, chat, and a whiteboard placeholder.</p>
+    <p class="page-subtitle">Shared focus with timers, chat, and an interactive whiteboard.</p>
     <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
         <button class="btn" onclick="window.SciwebFocus && SciwebFocus.start(25, 'Study with group')"><i class="fas fa-bullseye icon"></i> Start 25m</button>
         <button class="btn btn-secondary" onclick="window.SciwebFocus && SciwebFocus.stop()"><i class="fas fa-stop icon"></i> Stop</button>
@@ -15,10 +15,23 @@
 <div class="grid grid-2">
     <div class="card" style="min-height: 360px;">
         <h3 style="color: var(--text-primary); margin-bottom:10px;"><i class="fas fa-chalkboard icon"></i> Whiteboard</h3>
-        <div id="whiteboard" style="height:280px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px); border-radius:12px;"></div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-            <button class="btn btn-secondary"><i class="fas fa-pen icon"></i> Draw</button>
-            <button class="btn btn-secondary"><i class="fas fa-eraser icon"></i> Clear</button>
+        <div id="whiteboardContainer" style="position:relative; height:280px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px); border-radius:12px; overflow:hidden;">
+            <canvas id="whiteboard" style="display:block; cursor:crosshair;"></canvas>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center;">
+                <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">Color:</span>
+                <button class="color-btn active" data-color="#000000" style="background:#000000;" title="Black"></button>
+                <button class="color-btn" data-color="#FF0000" style="background:#FF0000;" title="Red"></button>
+                <button class="color-btn" data-color="#0000FF" style="background:#0000FF;" title="Blue"></button>
+                <button class="color-btn" data-color="#00AA00" style="background:#00AA00;" title="Green"></button>
+                <button class="color-btn" data-color="#FFA500" style="background:#FFA500;" title="Orange"></button>
+                <button class="color-btn" data-color="#800080" style="background:#800080;" title="Purple"></button>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; margin-left:auto;">
+                <button class="btn btn-secondary" id="clearBtn"><i class="fas fa-eraser icon"></i> Clear Section</button>
+                <button class="btn btn-secondary" id="fullClearBtn"><i class="fas fa-trash icon"></i> Clear All</button>
+            </div>
         </div>
     </div>
     <div class="card" style="min-height: 360px; display:flex; flex-direction:column;">
@@ -35,8 +48,30 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    .color-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 3px solid rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+    .color-btn:hover {
+        transform: scale(1.1);
+        border-color: rgba(0,0,0,0.3);
+    }
+    .color-btn.active {
+        border-color: rgba(0,0,0,0.6);
+        border-width: 4px;
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // Chat functionality
     const chatLog = document.getElementById('chatLog');
     const input = document.getElementById('chatInput');
     const send = document.getElementById('chatSend');
@@ -47,6 +82,159 @@ document.addEventListener('DOMContentLoaded', function(){
         chatLog.appendChild(p); chatLog.scrollTop = chatLog.scrollHeight;
     }
     if (send) send.addEventListener('click', function(){ if (!input.value) return; append('You: '+input.value); input.value=''; });
+
+    // Whiteboard functionality
+    const canvas = document.getElementById('whiteboard');
+    const container = document.getElementById('whiteboardContainer');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size to match container
+    function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Drawing state
+    let isDrawing = false;
+    let currentColor = '#000000';
+    let lastX = 0;
+    let lastY = 0;
+    
+    // Drawing settings
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // Get coordinates relative to canvas
+    function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches[0]) {
+            return {
+                x: e.touches[0].clientX - rect.left,
+                y: e.touches[0].clientY - rect.top
+            };
+        }
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    // Start drawing
+    function startDrawing(e) {
+        isDrawing = true;
+        const coords = getCoordinates(e);
+        lastX = coords.x;
+        lastY = coords.y;
+        e.preventDefault();
+    }
+    
+    // Draw
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const coords = getCoordinates(e);
+        
+        ctx.strokeStyle = currentColor;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+        
+        lastX = coords.x;
+        lastY = coords.y;
+        e.preventDefault();
+    }
+    
+    // Stop drawing
+    function stopDrawing(e) {
+        isDrawing = false;
+        e.preventDefault();
+    }
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+    canvas.addEventListener('touchcancel', stopDrawing);
+    
+    // Color selection
+    const colorButtons = document.querySelectorAll('.color-btn');
+    colorButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            colorButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            // Update current color
+            currentColor = this.getAttribute('data-color');
+        });
+    });
+    
+    // Clear section (eraser-like functionality - clears what you draw over)
+    const clearBtn = document.getElementById('clearBtn');
+    let eraserMode = false;
+    
+    clearBtn.addEventListener('click', function() {
+        eraserMode = !eraserMode;
+        
+        if (eraserMode) {
+            // Switch to eraser mode
+            clearBtn.innerHTML = '<i class="fas fa-pen icon"></i> Draw Mode';
+            clearBtn.classList.remove('btn-secondary');
+            clearBtn.classList.add('btn');
+            canvas.style.cursor = 'not-allowed';
+            
+            // Store original color
+            const originalColor = currentColor;
+            
+            // Make drawing white (erasing)
+            currentColor = '#FFFFFF';
+            ctx.lineWidth = 20; // Wider eraser
+            
+            // Restore when switching back
+            clearBtn.addEventListener('click', function restore() {
+                if (!eraserMode) {
+                    currentColor = originalColor;
+                    ctx.lineWidth = 3;
+                    canvas.style.cursor = 'crosshair';
+                    clearBtn.removeEventListener('click', restore);
+                }
+            }, { once: true });
+            
+        } else {
+            // Switch back to draw mode
+            clearBtn.innerHTML = '<i class="fas fa-eraser icon"></i> Clear Section';
+            clearBtn.classList.remove('btn');
+            clearBtn.classList.add('btn-secondary');
+        }
+    });
+    
+    // Full clear
+    const fullClearBtn = document.getElementById('fullClearBtn');
+    fullClearBtn.addEventListener('click', function() {
+        if (confirm('Clear the entire whiteboard?')) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Reset eraser mode if active
+            if (eraserMode) {
+                eraserMode = false;
+                clearBtn.innerHTML = '<i class="fas fa-eraser icon"></i> Clear Section';
+                clearBtn.classList.remove('btn');
+                clearBtn.classList.add('btn-secondary');
+                canvas.style.cursor = 'crosshair';
+                ctx.lineWidth = 3;
+            }
+        }
+    });
 });
 </script>
 {% endblock %}
