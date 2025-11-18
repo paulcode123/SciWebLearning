@@ -448,10 +448,6 @@ def api_create_conversation():
 
     return jsonify({'conversation_id': conv.id, 'redirect_url': url_for('chat_interface', project_id=project.id, conversation_id=conv.id)})
 
-@app.route('/style')
-@login_required
-def style():
-    return render_template('style_options.html')
 
 
 @app.route('/project/<int:project_id>/knowledge-graph')

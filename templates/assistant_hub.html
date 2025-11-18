@@ -21,7 +21,7 @@
         {% if projects %}
         <div style="display:flex; gap:8px; align-items:center;">
             <span style="color: var(--text-secondary);">Use project context:</span>
-            <select id="assistantProject" style="padding:8px 10px; border:2px solid #c8f7c5; border-radius:10px;">
+            <select id="assistantProject" style="padding:8px 10px; border:2px solid rgba(255, 20, 147, 0.3); border-radius:10px; background: rgba(20, 10, 20, 0.8); color: var(--text-primary);">
                 {% for p in projects %}
                 <option value="{{ p.id }}">{{ p.title }}</option>
                 {% endfor %}
@@ -34,15 +34,15 @@
 <div class="grid grid-3">
     {% for item in featured %}
     <div class="card" style="display:flex; flex-direction:column;">
-        <h3 style="color:#2d5016; margin-bottom: 6px;"><i class="fas fa-sparkles icon"></i> {{ item.title }}</h3>
-        <p style="color:#4a7c59; margin-bottom: 12px;">{{ item.objective }}</p>
+        <h3 style="color:var(--text-primary); margin-bottom: 6px;"><i class="fas fa-sparkles icon"></i> {{ item.title }}</h3>
+        <p style="color:var(--text-secondary); margin-bottom: 12px;">{{ item.objective }}</p>
         <div style="margin-top:auto; display:flex; gap:8px; flex-wrap:wrap;">
             {% if projects %}
             <button class="btn" onclick="launchTemplate('{{ item.style }}')"><i class="fas fa-play icon"></i> Start</button>
             {% else %}
             <a class="btn" href="{{ url_for('outline_chat') }}"><i class="fas fa-play icon"></i> Start</a>
             {% endif %}
-            <span class="badge" style="background: linear-gradient(45deg, #a8e6cf, #c8f7c5);">{{ item.style }}</span>
+            <span class="badge">{{ item.style }}</span>
         </div>
     </div>
     {% endfor %}

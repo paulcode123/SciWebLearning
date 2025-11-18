@@ -1,49 +1,49 @@
-/* SciWeb Design System: Premium Gradient UI */
+/* SciWeb Design System: Dark & Pink Theme */
 
 :root {
-  /* Vibrant Purple-Blue Gradient System */
-  --bg-start: #667eea;
-  --bg-mid: #764ba2;
-  --bg-end: #f093fb;
-  --accent-1: #5b86e5;
-  --accent-2: #36d1dc;
-  --accent-3: #f093fb;
-  --accent-4: #667eea;
-  --text-primary: #1a1f36;
-  --text-secondary: #4a5568;
-  --surface: rgba(255, 255, 255, 0.98);
-  --surface-border: rgba(255, 255, 255, 0.9);
-  --glow: rgba(102, 126, 234, 0.4);
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  --gradient-accent: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
-  --gradient-warm: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  --gradient-success: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
-  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-2xl: 0 30px 60px -15px rgba(102, 126, 234, 0.35);
+  /* Dark & Pink Color Scheme */
+  --bg-start: #0a0a0f;
+  --bg-mid: #0f0a14;
+  --bg-end: #1a0d1a;
+  --accent-1: #ff1493;
+  --accent-2: #ff69b4;
+  --accent-3: #ff10f0;
+  --accent-4: #ff6ec7;
+  --text-primary: #ffffff;
+  --text-secondary: #e0a0d0;
+  --surface: rgba(20, 10, 20, 0.95);
+  --surface-border: rgba(255, 20, 147, 0.3);
+  --glow: rgba(255, 20, 147, 0.4);
+  --gradient-primary: linear-gradient(135deg, #ff1493 0%, #ff69b4 50%, #ff10f0 100%);
+  --gradient-accent: linear-gradient(135deg, #ff10f0 0%, #ff1493 100%);
+  --gradient-warm: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+  --gradient-success: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 20, 147, 0.2);
+  --shadow-2xl: 0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 20, 147, 0.3);
 }
 
-/* Dark Theme - Premium Purple-Blue */
+/* Dark Theme - Already dark & pink by default */
 [data-theme="dark"] body {
   background:
-    linear-gradient(115deg, #1a1f36 0%, #2d1b69 35%, #1e3a8a 70%, #312e81 100%),
-    radial-gradient(900px 480px at 12% 8%, rgba(102,126,234,0.15), transparent 60%),
-    radial-gradient(1000px 560px at 88% 92%, rgba(240,147,251,0.12), transparent 60%);
+    linear-gradient(115deg, #0a0a0f 0%, #1a0d1a 35%, #0f0a14 70%, #1a0d1a 100%),
+    radial-gradient(900px 480px at 12% 8%, rgba(255, 20, 147, 0.15), transparent 60%),
+    radial-gradient(1000px 560px at 88% 92%, rgba(255, 105, 180, 0.12), transparent 60%);
   color: var(--text-primary);
 }
 [data-theme="dark"] {
-  --bg-start: #312e81;
-  --bg-mid: #2d1b69;
-  --bg-end: #1e3a8a;
-  --accent-1: #818cf8;
-  --accent-2: #a78bfa;
-  --accent-3: #f0abfc;
-  --text-primary: #f3f4f6;
-  --text-secondary: #d1d5db;
-  --surface: rgba(31, 41, 55, 0.92);
-  --surface-border: rgba(107, 114, 128, 0.25);
-  --glow: rgba(129, 140, 248, 0.35);
-  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #f0abfc 100%);
-  --gradient-accent: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
+  --bg-start: #0a0a0f;
+  --bg-mid: #0f0a14;
+  --bg-end: #1a0d1a;
+  --accent-1: #ff1493;
+  --accent-2: #ff69b4;
+  --accent-3: #ff10f0;
+  --text-primary: #ffffff;
+  --text-secondary: #e0a0d0;
+  --surface: rgba(20, 10, 20, 0.95);
+  --surface-border: rgba(255, 20, 147, 0.3);
+  --glow: rgba(255, 20, 147, 0.4);
+  --gradient-primary: linear-gradient(135deg, #ff1493 0%, #ff69b4 50%, #ff10f0 100%);
+  --gradient-accent: linear-gradient(135deg, #ff10f0 0%, #ff1493 100%);
 }
 
 /* Focus Mode: reduce distractions */
@@ -80,7 +80,6 @@ body.focus-mode .card {
   color: var(--text-primary) !important;
 }
 [data-theme="dark"] .btn.btn-secondary {
-  color: #0f2b1c !important;
+  color: var(--text-primary) !important;
 }
-
 
