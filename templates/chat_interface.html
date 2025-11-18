@@ -2,12 +2,50 @@
 
 {% block title %}{{ conversation.title }} - {{ project.title }}{% endblock %}
 
+{% block head %}
+<!-- MathJax for LaTeX rendering -->
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]'], ['$$', '$$']],
+        processEscapes: true,
+        processEnvironments: true,
+        processRefs: true,
+        digits: /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/
+    },
+    options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+    },
+    startup: {
+        ready: () => {
+            console.log('MathJax is ready');
+            MathJax.startup.defaultReady();
+        }
+    }
+};
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<!-- Marked.js for Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="back-nav">
+    {% if outline_mode %}
+    <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+    {% else %}
     <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="back-btn">
         <i class="fas fa-arrow-left"></i>
         Back to Project
     </a>
+    {% endif %}
 </div>
 
 <div class="page-header" style="margin-bottom: 20px; text-align: center;">
@@ -16,11 +54,26 @@
         {{ conversation.title }}
     </h1>
     <p class="page-subtitle" style="max-width: 760px; margin: 0 auto;">Learning conversation in {{ project.title }}</p>
+    <!-- Gamification Display -->
+    <div style="display:flex; gap:16px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--surface-hover); border-radius:12px; border:1px solid var(--border);">
+            <i class="fas fa-star" style="color:var(--accent);"></i>
+            <span style="color:var(--text-primary); font-weight:600;">Level <span id="userLevel">{{ current_user.level if current_user else 1 }}</span></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--surface-hover); border-radius:12px; border:1px solid var(--border);">
+            <i class="fas fa-bolt" style="color:#fbbf24;"></i>
+            <span style="color:var(--text-primary);"><span id="userXP">{{ current_user.xp if current_user else 0 }}</span> XP</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--surface-hover); border-radius:12px; border:1px solid var(--border);">
+            <i class="fas fa-fire" style="color:#ef4444;"></i>
+            <span style="color:var(--text-primary);"><span id="userStreak">{{ current_user.streak_days if current_user else 0 }}</span> day streak</span>
+        </div>
+    </div>
 </div>
 
 <div style="display: flex; flex-direction: column; height: calc(100vh - 180px); max-height: 680px;">
     <!-- Chat Messages Container -->
-    <div id="chatMessages" style="flex: 1; background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(245,255,245,0.96)); border-radius: 16px 16px 0 0; padding: 22px; overflow-y: auto; border: 1px solid rgba(168, 230, 207, 0.3); position: relative;">
+    <div id="chatMessages" style="flex: 1; background: var(--surface); border-radius: 16px 16px 0 0; padding: 22px; overflow-y: auto; border: 1px solid var(--border); position: relative;">
         <!-- Mascot Container -->
         <div id="mascotContainer" aria-hidden="true" style="position:absolute; right:16px; top:16px; width:120px; height:120px; pointer-events:none;">
             <!-- SVG injected by script -->
@@ -28,16 +81,16 @@
         <!-- Welcome Message -->
         <div class="message ai-message" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: flex-start; gap: 15px;">
-                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #81c784, #a8e6cf); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-robot" style="color: #2d5016; font-size: 1.2rem;"></i>
+                <div style="width: 40px; height: 40px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-robot" style="color: var(--accent); font-size: 1.2rem;"></i>
                 </div>
-                <div style="background: #f0f8f0; padding: 15px 20px; border-radius: 15px; max-width: 80%; border-top-left-radius: 5px;">
+                <div style="background: var(--surface-hover); padding: 15px 20px; border-radius: 15px; max-width: 80%; border-top-left-radius: 5px; border: 1px solid var(--border);">
                     {% if outline_mode %}
-                    <p style="margin: 0; color: #2d5016; line-height: 1.5;">
+                    <p style="margin: 0; color: var(--text-primary); line-height: 1.5;">
                         Let's outline your learning project. Tell me what you want to learn, any resources to include, whether you prefer surveying existing knowledge or starting from scratch, and if you want deep mastery or a broad overview.
                     </p>
                     {% else %}
-                    <p style="margin: 0; color: #2d5016; line-height: 1.5;">
+                    <p style="margin: 0; color: var(--text-primary); line-height: 1.5;">
                         Hello! I'm your AI learning assistant. I'm here to help you explore <strong>{{ project.title }}</strong> through our conversation about <strong>{{ conversation.title }}</strong>.
                         <br><br>
                         I have context about your learning preferences and conversation history to provide you with a personalized learning experience. What would you like to start with?
@@ -49,13 +102,13 @@
     </div>
 
     <!-- Chat Input Container -->
-    <div style="background: rgba(255, 255, 255, 0.94); border-radius: 0 0 16px 16px; padding: 20px; border: 1px solid rgba(168, 230, 207, 0.3); border-top: none;">
+    <div style="background: var(--surface); border-radius: 0 0 16px 16px; padding: 20px; border: 1px solid var(--border); border-top: none;">
         <form id="chatForm" style="display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 1;">
                 <textarea id="messageInput" 
                          placeholder="Type your message or question here..."
                          rows="3"
-                         style="width: 100%; padding: 15px; border: 2px solid #c8f7c5; border-radius: 12px; resize: none; font-size: 1rem; line-height: 1.4;"
+                         style="width: 100%; padding: 15px; border: 2px solid var(--input-border); border-radius: 12px; resize: none; font-size: 1rem; line-height: 1.4; background: var(--input-bg); color: var(--text-primary);"
                          onkeydown="handleKeyDown(event)"></textarea>
             </div>
             <button type="submit" class="btn" style="padding: 15px 20px; height: fit-content;">
@@ -95,16 +148,16 @@
 <!-- Finish Outline Modal -->
 <div id="finishOutlineModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="max-width: 520px; width: 100%; position: relative; z-index: 1001;">
-        <h2 style="color: #2d5016; margin-bottom: 10px;">Save Project</h2>
-        <p style="color: #4a7c59; margin-bottom: 15px;">Confirm your project details.</p>
+        <h2 style="color: var(--text-primary); margin-bottom: 10px;">Save Project</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 15px;">Confirm your project details.</p>
         <div style="display: grid; gap: 12px;">
             <div>
-                <label for="outlineTopic" style="display:block; color:#2d5016; font-weight:600; margin-bottom:6px;">Project topic</label>
-                <input id="outlineTopic" type="text" style="width:100%; padding: 10px 12px; border: 2px solid #c8f7c5; border-radius: 10px;" placeholder="e.g., Deep Learning for Vision">
+                <label for="outlineTopic" style="display:block; color:var(--text-primary); font-weight:600; margin-bottom:6px;">Project topic</label>
+                <input id="outlineTopic" type="text" style="width:100%; padding: 10px 12px; border: 2px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--text-primary);" placeholder="e.g., Deep Learning for Vision">
             </div>
             <div>
-                <label for="outlineDesc" style="display:block; color:#2d5016; font-weight:600; margin-bottom:6px;">Short description (optional)</label>
-                <textarea id="outlineDesc" rows="3" style="width:100%; padding: 10px 12px; border: 2px solid #c8f7c5; border-radius: 10px;" placeholder="One sentence about this project"></textarea>
+                <label for="outlineDesc" style="display:block; color:var(--text-primary); font-weight:600; margin-bottom:6px;">Short description (optional)</label>
+                <textarea id="outlineDesc" rows="3" style="width:100%; padding: 10px 12px; border: 2px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--text-primary);" placeholder="One sentence about this project"></textarea>
             </div>
         </div>
         <div style="display:flex; gap:10px; margin-top: 16px; justify-content: flex-end;">
@@ -119,8 +172,8 @@
 <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
     <div class="message ai-message">
         <div style="display: flex; align-items: flex-start; gap: 15px;">
-            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #81c784, #a8e6cf); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: aiThinking 2s ease-in-out infinite;">
-                <i class="fas fa-robot" style="color: #2d5016; font-size: 1.2rem;"></i>
+            <div style="width: 40px; height: 40px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: aiThinking 2s ease-in-out infinite;">
+                <i class="fas fa-robot" style="color: var(--accent); font-size: 1.2rem;"></i>
             </div>
             <div class="typing-indicator">
                 <div class="typing-dot"></div>
@@ -173,15 +226,16 @@
     align-items: center;
     gap: 4px;
     padding: 10px 15px;
-    background: #f0f8f0;
+    background: var(--surface-hover);
     border-radius: 15px;
     border-top-left-radius: 5px;
+    border: 1px solid var(--border);
 }
 
 .typing-dot {
     width: 6px;
     height: 6px;
-    background: #81c784;
+    background: var(--accent);
     border-radius: 50%;
     animation: typingDots 1.4s infinite;
 }
@@ -205,28 +259,28 @@
 }
 
 .quick-action-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #c8f7c5;
+    background: var(--surface);
+    border: 2px solid var(--border);
     padding: 8px 12px;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9rem;
-    color: #81c784;
+    color: var(--accent);
     font-weight: 500;
 }
 
 .quick-action-btn:hover {
-    background: linear-gradient(135deg, #81c784, #a8e6cf);
-    color: #2d5016;
-    border-color: #81c784;
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
     transform: translateY(-2px);
 }
 
 #messageInput:focus {
-    border-color: #81c784;
+    border-color: var(--accent);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.2);
+    box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 /* Mascot animations */
@@ -245,6 +299,141 @@
 .mascot { animation: mascotBob 2.6s ease-in-out infinite; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.12)); }
 .mascot .eye { transform-origin: center; animation: mascotBlink 5s ease-in-out infinite; }
 .mascot.talking .mouth { transform-origin: center; animation: mascotTalk .5s ease-in-out infinite; }
+
+/* Markdown content styling */
+.markdown-content {
+    line-height: 1.6;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.markdown-content h1 { font-size: 1.5em; }
+.markdown-content h2 { font-size: 1.3em; }
+.markdown-content h3 { font-size: 1.1em; }
+
+.markdown-content p {
+    margin: 0.8em 0;
+    line-height: 1.6;
+}
+
+.markdown-content p:first-child {
+    margin-top: 0;
+}
+
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    margin: 0.8em 0;
+    padding-left: 1.8em;
+}
+
+.markdown-content li {
+    margin: 0.4em 0;
+    line-height: 1.6;
+}
+
+.markdown-content li > p {
+    margin: 0.4em 0;
+}
+
+.markdown-content code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+
+[data-theme="dark"] .markdown-content code {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.markdown-content pre {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 1em 0;
+    line-height: 1.5;
+}
+
+[data-theme="dark"] .markdown-content pre {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.markdown-content pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+.markdown-content blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.markdown-content table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+}
+
+.markdown-content th,
+.markdown-content td {
+    border: 1px solid var(--border);
+    padding: 0.5em;
+    text-align: left;
+}
+
+.markdown-content th {
+    background: var(--surface-hover);
+    font-weight: 600;
+}
+
+.markdown-content strong {
+    font-weight: 600;
+}
+
+.markdown-content em {
+    font-style: italic;
+}
+
+.markdown-content a {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.markdown-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5em 0;
+}
+
+/* MathJax styling */
+.markdown-content .MathJax {
+    font-size: 1.1em !important;
+}
+
+.markdown-content .MathJax_Display {
+    margin: 1em 0 !important;
+    text-align: center;
+}
 </style>
 {% endblock %}
 
@@ -274,23 +463,74 @@ function addMessage(content, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
     
-    const avatarColor = isUser ? 'linear-gradient(135deg, #ffb3ba, #ffdfba)' : 'linear-gradient(135deg, #81c784, #a8e6cf)';
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const avatarColor = isUser ? 'var(--accent)' : 'var(--accent-light)';
     const avatarIcon = isUser ? 'fas fa-user' : 'fas fa-robot';
     const messageAlign = isUser ? 'flex-end' : 'flex-start';
     const bubbleAlign = isUser ? 'border-top-right-radius: 5px' : 'border-top-left-radius: 5px';
-    const avatarIconColor = isUser ? '#8b4513' : '#2d5016';
+    const avatarIconColor = 'white';
+    const bubbleBg = isUser ? 'var(--accent)' : 'var(--surface-hover)';
+    const bubbleColor = isUser ? 'white' : 'var(--text-primary)';
     
     // Initial state for animation
     messageDiv.style.opacity = '0';
     messageDiv.style.transform = 'translateY(30px) scale(0.95)';
+    
+    // Render markdown for AI messages, plain text for user messages
+    let renderedContent = content;
+    if (!isUser && typeof marked !== 'undefined') {
+        // Configure marked for better rendering - preserve LaTeX
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: false,
+            mangle: false
+        });
+        try {
+            // First, protect LaTeX delimiters from markdown processing
+            // Replace LaTeX delimiters with placeholders
+            const latexPlaceholders = [];
+            let placeholderIndex = 0;
+            
+            // Protect display math \[ \]
+            renderedContent = renderedContent.replace(/\\\[([\s\S]*?)\\\]/g, (match) => {
+                const placeholder = `__LATEX_DISPLAY_${placeholderIndex}__`;
+                latexPlaceholders.push({ placeholder: placeholder, content: match });
+                placeholderIndex++;
+                return placeholder;
+            });
+            
+            // Protect inline math \( \)
+            renderedContent = renderedContent.replace(/\\\(([\s\S]*?)\\\)/g, (match) => {
+                const placeholder = `__LATEX_INLINE_${placeholderIndex}__`;
+                latexPlaceholders.push({ placeholder: placeholder, content: match });
+                placeholderIndex++;
+                return placeholder;
+            });
+            
+            // Now render markdown
+            renderedContent = marked.parse(renderedContent);
+            
+            // Restore LaTeX delimiters
+            latexPlaceholders.forEach(item => {
+                renderedContent = renderedContent.replace(item.placeholder, item.content);
+            });
+        } catch (e) {
+            console.error('Markdown parsing error:', e);
+            renderedContent = content.replace(/\n/g, '<br>');
+        }
+    } else {
+        // Escape HTML for user messages and convert newlines to <br>
+        renderedContent = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    }
     
     messageDiv.innerHTML = `
         <div style="display: flex; align-items: flex-start; gap: 15px; justify-content: ${messageAlign}; ${isUser ? 'flex-direction: row-reverse;' : ''}">
             <div style="width: 40px; height: 40px; background: ${avatarColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                 <i class="${avatarIcon}" style="color: ${avatarIconColor}; font-size: 1.2rem;"></i>
             </div>
-            <div class="message-bubble" style="background: ${isUser ? 'linear-gradient(135deg, #ffb3ba, #ffdfba)' : '#f0f8f0'}; color: ${isUser ? '#8b4513' : '#2d5016'}; padding: 15px 20px; border-radius: 15px; max-width: 80%; ${bubbleAlign}">
-                <p style="margin: 0; line-height: 1.5;">${content}</p>
+            <div class="message-bubble markdown-content tex2jax_process" style="background: ${bubbleBg}; color: ${bubbleColor}; padding: 15px 20px; border-radius: 15px; max-width: 80%; ${bubbleAlign}; border: 1px solid var(--border); word-wrap: break-word; overflow-wrap: break-word;">
+                ${renderedContent}
             </div>
         </div>
     `;
@@ -312,71 +552,172 @@ function addMessage(content, isUser = false) {
         });
     }, 100);
     
-    // Add typewriter effect for AI messages
+    // Render MathJax after content is added
     if (!isUser) {
-        setTimeout(() => {
-            typewriterEffect(messageDiv.querySelector('.message-bubble p'), content);
-        }, 200);
+        // Wait for MathJax to be ready, then render
+        const renderMath = () => {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                // Use typesetPromise to render math
+                MathJax.typesetPromise([messageDiv]).then(() => {
+                    console.log('MathJax rendered successfully');
+                }).catch((err) => {
+                    console.error('MathJax rendering error:', err);
+                });
+            } else if (window.MathJax && window.MathJax.startup) {
+                // MathJax 3.x - wait for startup promise
+                if (window.MathJax.startup.promise) {
+                    window.MathJax.startup.promise.then(() => {
+                        MathJax.typesetPromise([messageDiv]).then(() => {
+                            console.log('MathJax rendered successfully');
+                        }).catch((err) => {
+                            console.error('MathJax rendering error:', err);
+                        });
+                    });
+                } else {
+                    // MathJax might be ready but promise not available
+                    setTimeout(() => {
+                        if (window.MathJax.typesetPromise) {
+                            MathJax.typesetPromise([messageDiv]).catch((err) => {
+                                console.error('MathJax rendering error:', err);
+                            });
+                        }
+                    }, 500);
+                }
+            } else {
+                // Retry if MathJax isn't ready yet
+                setTimeout(renderMath, 200);
+            }
+        };
+        // Start trying to render after a short delay
+        setTimeout(renderMath, 200);
     }
 }
 
-function typewriterEffect(element, text) {
-    element.innerHTML = '';
-    let i = 0;
-    const speed = 30; // milliseconds per character
-    
-    function typeChar() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(typeChar, speed);
+// Removed typewriter effect - it doesn't work well with markdown/math rendering
+// Messages are now rendered immediately with full formatting
+
+// Gamification functions - defined in global scope so they can be accessed
+function updateGamification(data) {
+    if (data && data.total_xp !== undefined) {
+        const xpEl = document.getElementById('userXP');
+        const levelEl = document.getElementById('userLevel');
+        const streakEl = document.getElementById('userStreak');
+        
+        if (xpEl) {
+            // Animate XP gain
+            const oldXP = parseInt(xpEl.textContent) || 0;
+            animateValue(xpEl, oldXP, data.total_xp, 500);
+        }
+        if (levelEl && data.level) {
+            levelEl.textContent = data.level;
+            if (data.leveled_up) {
+                showLevelUpNotification(data.level);
+            }
+        }
+        if (streakEl && data.streak_days !== undefined) {
+            streakEl.textContent = data.streak_days;
+        }
+        
+        // Show XP gain notification
+        if (data.xp_gained) {
+            showXPNotification(data.xp_gained);
         }
     }
-    
-    typeChar();
 }
 
-document.getElementById('chatForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (isWaitingForResponse) return;
-    
-    const messageInput = document.getElementById('messageInput');
-    const message = messageInput.value.trim();
-    
-    if (!message) return;
-    
-    // Add user message
-    addMessage(message, true);
-    messageInput.value = '';
-    lastUserMessage = message;
-    
-    // Show loading indicator
-    isWaitingForResponse = true;
-    document.getElementById('loadingIndicator').style.display = 'block';
-    
-    try {
-        const response = await axios.post('/api/send-message', {
-            message: message,
-            project_id: {{ project.id }},
-            conversation_id: {{ conversation.id }},
-            outline_mode: Boolean(OUTLINE_MODE)
-        });
-        
-        // Add AI response
-        addMessage(response.data.response, false);
-    } catch (error) {
-        console.error('Error sending message:', error);
-        addMessage('Sorry, I encountered an error. Please try again.', false);
-    } finally {
-        // Hide loading indicator
-        isWaitingForResponse = false;
-        document.getElementById('loadingIndicator').style.display = 'none';
-    }
-});
+function animateValue(element, start, end, duration) {
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            element.textContent = end;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+    }, 16);
+}
+
+function showXPNotification(xp) {
+    const notification = document.createElement('div');
+    notification.style.cssText = 'position:fixed; top:80px; right:20px; padding:12px 20px; background:var(--accent); color:white; border-radius:8px; z-index:10000; animation:slideInRight 0.3s ease-out; box-shadow:var(--shadow-lg);';
+    notification.innerHTML = `<i class="fas fa-bolt"></i> +${xp} XP`;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+}
+
+function showLevelUpNotification(level) {
+    const notification = document.createElement('div');
+    notification.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); padding:24px 32px; background:linear-gradient(135deg, var(--accent), var(--accent-hover)); color:white; border-radius:16px; z-index:10001; animation:scaleIn 0.4s ease-out; box-shadow:var(--shadow-lg); text-align:center;';
+    notification.innerHTML = `<div style="font-size:2rem; margin-bottom:8px;">🎉</div><div style="font-size:1.5rem; font-weight:bold;">Level Up!</div><div style="font-size:1.2rem; margin-top:8px;">You reached Level ${level}!</div>`;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'scaleOut 0.4s ease-out';
+        setTimeout(() => notification.remove(), 400);
+    }, 3000);
+}
 
 // Enhanced page load animations
 document.addEventListener('DOMContentLoaded', function() {
+    // Form submit handler - moved inside DOMContentLoaded to access updateGamification
+    const chatForm = document.getElementById('chatForm');
+    if (chatForm) {
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isWaitingForResponse) return;
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, true);
+            messageInput.value = '';
+            lastUserMessage = message;
+            
+            // Show loading indicator
+            isWaitingForResponse = true;
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            try {
+                const response = await axios.post('/api/send-message', {
+                    message: message,
+                    project_id: {{ project.id if project.id else 0 }},
+                    conversation_id: {{ conversation.id if conversation.id else 0 }},
+                    outline_mode: Boolean(OUTLINE_MODE)
+                });
+                
+                // Add AI response
+                addMessage(response.data.response, false);
+                
+                // Update gamification display
+                if (response.data && response.data.xp_gained) {
+                    updateGamification(response.data);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                console.error('Error response:', error.response);
+                let errorMsg = 'Sorry, I encountered an error. Please try again.';
+                if (error.response && error.response.data && error.response.data.response) {
+                    errorMsg = error.response.data.response;
+                } else if (error.message) {
+                    errorMsg = `Error: ${error.message}`;
+                }
+                addMessage(errorMsg, false);
+            } finally {
+                // Hide loading indicator
+                isWaitingForResponse = false;
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        });
+    }
     // Animate chat container entrance
     const chatContainer = document.querySelector('div[style*="display: flex; flex-direction: column"]');
     chatContainer.style.opacity = '0';
@@ -405,16 +746,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1200);
     
     // Add input field intelligence
-    const messageInput = document.getElementById('messageInput');
-    messageInput.addEventListener('input', function() {
-        if (this.value.length > 0) {
-            this.style.borderColor = '#81c784';
-            this.style.boxShadow = '0 0 0 3px rgba(129, 199, 132, 0.2)';
-        } else {
-            this.style.borderColor = '#c8f7c5';
-            this.style.boxShadow = '';
-        }
-    });
+        const messageInput = document.getElementById('messageInput');
+        messageInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                this.style.borderColor = 'var(--accent)';
+                this.style.boxShadow = '0 0 0 3px var(--accent-light)';
+            } else {
+                this.style.borderColor = 'var(--input-border)';
+                this.style.boxShadow = '';
+            }
+        });
     
     // Enhanced quick button interactions
     quickButtons.forEach(btn => {
@@ -496,7 +837,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load existing messages
     if (Array.isArray(INITIAL_MESSAGES) && INITIAL_MESSAGES.length > 0) {
-        INITIAL_MESSAGES.forEach(m => addMessage(m.content, m.role === 'user'));
+        INITIAL_MESSAGES.forEach(m => {
+            addMessage(m.content, m.role === 'user');
+        });
+        // Re-render MathJax for all loaded messages after MathJax is ready
+        const renderAllMath = () => {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                const messageBubbles = document.querySelectorAll('.markdown-content');
+                if (messageBubbles.length > 0) {
+                    MathJax.typesetPromise(Array.from(messageBubbles)).then(() => {
+                        console.log('MathJax rendered all initial messages');
+                    }).catch((err) => {
+                        console.error('MathJax rendering error:', err);
+                    });
+                }
+            } else if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                window.MathJax.startup.promise.then(() => {
+                    const messageBubbles = document.querySelectorAll('.markdown-content');
+                    if (messageBubbles.length > 0) {
+                        MathJax.typesetPromise(Array.from(messageBubbles)).catch((err) => {
+                            console.error('MathJax rendering error:', err);
+                        });
+                    }
+                });
+            } else {
+                setTimeout(renderAllMath, 200);
+            }
+        };
+        setTimeout(renderAllMath, 500);
+    }
+    
+    // Add CSS animations (if not already added)
+    if (!document.getElementById('gamification-animations')) {
+        const style = document.createElement('style');
+        style.id = 'gamification-animations';
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes scaleIn {
+                from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+                to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            }
+            @keyframes scaleOut {
+                from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                to { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     // Inject Duolingo-style mascot based on conversation style/title

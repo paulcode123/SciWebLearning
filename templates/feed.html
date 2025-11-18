@@ -28,7 +28,7 @@
         <p style="color: var(--text-secondary);">{{ it.preview }}</p>
         <div style="margin:10px 0;">
             {% for c in it.concepts %}
-            <span class="badge" style="background: linear-gradient(45deg, #e0ffe8, #f0fff5);">#{{ c }}</span>
+            <span class="badge" style="background: var(--accent-light); color: var(--accent-dark);">#{{ c }}</span>
             {% endfor %}
         </div>
         <div style="display:flex; gap:8px; margin-top:auto;">
@@ -38,8 +38,8 @@
     </div>
     {% endfor %}
     <!-- Placeholder to complete block to 3 items -->
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:180px; background: linear-gradient(135deg, rgba(168,230,207,0.25), rgba(220,237,193,0.3)); border: 2px dashed #b8e6b8;">
-        <i class="fas fa-lightbulb" style="color:#81c784; font-size:1.8rem;"></i>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:180px; background: var(--surface-hover); border: 2px dashed var(--border);">
+        <i class="fas fa-lightbulb" style="color:var(--accent); font-size:1.8rem;"></i>
         <p style="margin-top:8px; color: var(--text-secondary);">Reflection incoming after this block.</p>
     </div>
 </div>

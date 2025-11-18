@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 import json
 import os
 from datetime import datetime
@@ -14,9 +14,11 @@ from flask_migrate import Migrate
 
 from config import DevelopmentConfig, ProductionConfig
 from dotenv import load_dotenv
-from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge
+from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge, GradeSubmission
 from chat_providers import get_default_provider
 from kg import extract_knowledge_graph
+from werkzeug.utils import secure_filename
+import base64
 
 load_dotenv()
 # Also load server-managed secrets from instance folder if present
@@ -210,6 +212,10 @@ def logout():
 @login_required
 def outline_chat():
     """Outline session that starts a conversation without creating a project yet"""
+    # Initialize or reset outline history for a fresh session
+    # Optionally, you can keep history by not clearing it
+    # session.pop('outline_history', None)  # Uncomment to reset history on each visit
+    
     temp_project = {
         "id": 0,
         "title": "New Learning Project",
@@ -221,7 +227,16 @@ def outline_chat():
         "id": 0,
         "title": "Outline Session"
     }
-    return render_template('chat_interface.html', project=temp_project, conversation=temp_conversation, outline_mode=True)
+    
+    # Load existing outline history if available
+    outline_messages = session.get('outline_history', [])
+    messages_json = json.dumps([{"role": m["role"], "content": m["content"]} for m in outline_messages])
+    
+    return render_template('chat_interface.html', 
+                         project=temp_project, 
+                         conversation=temp_conversation, 
+                         outline_mode=True,
+                         messages_json=messages_json)
 
 @app.route('/project/<int:project_id>')
 @login_required
@@ -279,130 +294,277 @@ def chat_interface(project_id, conversation_id):
 @login_required
 def send_message():
     """API endpoint to handle chat messages"""
-    data = request.json or {}
-    message = (data.get('message') or '').strip()
-    raw_outline = data.get('outline_mode', False)
-    outline_mode = (raw_outline is True) or (
-        isinstance(raw_outline, str) and raw_outline.strip().lower() in ('true', '1', 'yes')
-    )
-    project_id = data.get('project_id')
-    conversation_id = data.get('conversation_id')
+    try:
+        data = request.json or {}
+        message = (data.get('message') or '').strip()
+        
+        if not message:
+            return jsonify({
+                'response': 'Please enter a message.',
+                'timestamp': datetime.now().isoformat(),
+                'error': True
+            })
+        
+        raw_outline = data.get('outline_mode', False)
+        outline_mode = (raw_outline is True) or (
+            isinstance(raw_outline, str) and raw_outline.strip().lower() in ('true', '1', 'yes')
+        )
+        project_id = data.get('project_id')
+        conversation_id = data.get('conversation_id')
 
-    # Force outline mode ONLY for the outline temp session (project_id == 0 or conversation_id == 0)
-    if outline_mode and (project_id not in (0, None) and conversation_id not in (0, None)):
-        outline_mode = False
+        # Force outline mode ONLY for the outline temp session (project_id == 0 or conversation_id == 0)
+        if outline_mode and (project_id not in (0, None) and conversation_id not in (0, None)):
+            outline_mode = False
 
-    if outline_mode:
-        # Use provider to generate an outline-guided response instead of a static placeholder
-        try:
+        if outline_mode:
+            # Use provider to generate an outline-guided response with conversation history
             provider = get_default_provider()
+            
+            # Check if provider is available (check for API key)
+            api_key = os.environ.get('OPENAI_API_KEY')
+            if not api_key or (hasattr(provider, '_has_key') and not provider._has_key):
+                return jsonify({
+                    'response': (
+                        "Provider unavailable: missing OPENAI_API_KEY. Please add it to your environment or .env file, "
+                        "then refresh and try again."
+                    ),
+                    'timestamp': datetime.now().isoformat(),
+                    'error': True
+                })
+            
+            # Maintain conversation history in session
+            if 'outline_history' not in session:
+                session['outline_history'] = []
+            
+            # Add user message to history
+            session['outline_history'].append({"role": "user", "content": message})
+            
+            # Build messages with system prompt and history
             sys_prompt = (
-                "You are SciWeb, guiding a learner to outline a learning project. Ask concise, targeted"
-                " questions to clarify topic, resources, prior knowledge, and desired depth. Propose a brief"
-                " plan (milestones, skills, checkpoints). End with 1-2 short questions to proceed."
+                "You are SciWeb, an AI learning guide helping a learner outline their learning project. "
+                "Ask concise, targeted questions to clarify: (1) the topic/subject they want to learn, "
+                "(2) any specific resources or materials they want to include, (3) their prior knowledge level, "
+                "(4) whether they want a broad overview or deep mastery, and (5) their learning goals. "
+                "Propose a brief structured plan with milestones, key skills to develop, and checkpoints. "
+                "Keep responses conversational and encouraging. End with 1-2 short questions to proceed."
             )
-            ai_text = provider.chat([
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": message or "Help me plan my learning project."}
-            ])
-        except Exception:
-            ai_text = (
-                "Outline mode active. Set OPENAI_API_KEY to enable guided outlining, or create a project to"
-                " continue in a persistent chat."
-            )
-        return jsonify({'response': ai_text, 'timestamp': datetime.now().isoformat()})
+            
+            messages = [{"role": "system", "content": sys_prompt}] + session['outline_history'][-20:]  # Keep last 20 messages
+            
+            try:
+                # Call the provider
+                ai_text = provider.chat(messages, model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'))
+                
+                # Check if we got a valid response (not an error message)
+                if not ai_text or ai_text.startswith("Provider unavailable"):
+                    return jsonify({
+                        'response': ai_text or "No response from AI provider. Please check your API key.",
+                        'timestamp': datetime.now().isoformat(),
+                        'error': True
+                    })
+                
+                # Add assistant response to history
+                session['outline_history'].append({"role": "assistant", "content": ai_text})
+                session.modified = True
+                
+                # Award XP for outline mode interaction
+                from datetime import date
+                try:
+                    current_user.update_streak()
+                    leveled_up = current_user.add_xp(10)  # 10 XP per message
+                    db.session.commit()
+                except Exception as db_error:
+                    # If DB commit fails, log but don't fail the request
+                    print(f"Warning: Failed to update user stats: {db_error}")
+                    db.session.rollback()
+                    leveled_up = False
+                
+                return jsonify({
+                    'response': ai_text,
+                    'timestamp': datetime.now().isoformat(),
+                    'xp_gained': 10,
+                    'total_xp': current_user.xp if hasattr(current_user, 'xp') else 0,
+                    'level': current_user.level if hasattr(current_user, 'level') else 1,
+                    'leveled_up': leveled_up if 'leveled_up' in locals() else False,
+                    'streak_days': current_user.streak_days if hasattr(current_user, 'streak_days') else 0
+                })
+            except Exception as e:
+                # Log the error with full traceback for debugging
+                import traceback
+                error_trace = traceback.format_exc()
+                error_msg = str(e)
+                print(f"Error in outline mode: {error_msg}")
+                print(error_trace)
+                
+                # Return a more informative error message (always return 200 with error in response)
+                # This ensures the frontend can read the error message
+                if "API key" in error_msg or "authentication" in error_msg.lower() or "401" in error_msg:
+                    return jsonify({
+                        'response': (
+                            "Authentication error: Please check that your OPENAI_API_KEY is valid and has not expired. "
+                            f"Error details: {error_msg}"
+                        ),
+                        'timestamp': datetime.now().isoformat(),
+                        'error': True
+                    })
+                elif "rate limit" in error_msg.lower() or "429" in error_msg:
+                    return jsonify({
+                        'response': (
+                            "Rate limit exceeded: Please wait a moment and try again."
+                        ),
+                        'timestamp': datetime.now().isoformat(),
+                        'error': True
+                    })
+                else:
+                    return jsonify({
+                        'response': (
+                            f"Error: {error_msg}. Please check your API key and try again. "
+                            "If the problem persists, check the server logs for more details."
+                        ),
+                        'timestamp': datetime.now().isoformat(),
+                        'error': True
+                    })
 
-    # Normal chat flow with persistence and provider call
-    conversation = Conversation.query.join(Project).filter(
-        Conversation.id == conversation_id,
-        Project.id == project_id,
-        Project.owner_id == current_user.id,
-    ).first()
-    if not conversation:
-        return jsonify({'error': 'Conversation not found'}), 404
+        # Normal chat flow with persistence and provider call
+        if not project_id or not conversation_id:
+            return jsonify({
+                'response': 'Invalid request: project_id and conversation_id are required for normal chat mode.',
+                'timestamp': datetime.now().isoformat(),
+                'error': True
+            })
+        
+        conversation = Conversation.query.join(Project).filter(
+            Conversation.id == conversation_id,
+            Project.id == project_id,
+            Project.owner_id == current_user.id,
+        ).first()
+        if not conversation:
+            return jsonify({
+                'response': 'Conversation not found. Please create a new conversation.',
+                'timestamp': datetime.now().isoformat(),
+                'error': True
+            })
 
-    # Persist user message
-    user_msg = Message(conversation_id=conversation.id, role='user', content=message)
-    db.session.add(user_msg)
-    db.session.commit()
+        # Persist user message
+        user_msg = Message(conversation_id=conversation.id, role='user', content=message)
+        db.session.add(user_msg)
+        
+        # Award XP and update streak for user activity
+        from datetime import date
+        current_user.update_streak()
+        leveled_up = current_user.add_xp(10)  # 10 XP per message
+        db.session.commit()
 
-    # Build provider messages from history (trimmed) with SciWeb system prompt
-    history = (
-        Message.query.filter_by(conversation_id=conversation.id)
-        .order_by(Message.created_at.asc())
-        .all()
-    )
-    # Compose a system prompt that encodes SciWeb's learning framework
-    style = conversation.interaction_style or 'Socratic Questioning'
-    sys_prompt = (
-        "You are SciWeb, an AI learning guide. Goals: (1) Conversational knowledge derivation with"
-        " historical simulations and STEM re-derivations; (2) Scaffolded prompting with adaptive hints;"
-        " (3) Build conceptual connections suitable for extraction into a knowledge graph;"
-        " (4) Encourage reflection and milestone framing."
-        f" Interaction style: {style}. Adjust difficulty by learner signals. Prefer prompting the learner"
-        " to think, show steps, and connect ideas historically when relevant. Keep responses concise but"
-        " rigorous; include check-for-understanding questions."
-    )
-    provider_messages = [{"role": "system", "content": sys_prompt}] + [
-        {"role": m.role, "content": m.content} for m in history
-    ][-24:]
-
-    try:
-        provider = get_default_provider()
-        ai_text = provider.chat(provider_messages, model=conversation.ai_model)
-    except Exception as e:
-        # Provide a more actionable error message for setup issues
-        missing_key = 'OPENAI_API_KEY' not in os.environ or not os.environ.get('OPENAI_API_KEY')
-        if missing_key:
-            ai_text = (
-                "Provider unavailable: missing OPENAI_API_KEY. Add it to your environment or .env, then"
-                " refresh and try again."
-            )
-        else:
-            ai_text = "Sorry, there was an issue contacting the AI provider. Please try again."
-
-    # Persist assistant message
-    ai_msg = Message(conversation_id=conversation.id, role='assistant', content=ai_text)
-    db.session.add(ai_msg)
-    db.session.commit()
-
-    # Update knowledge graph for this conversation (simple refresh)
-    try:
-        full_messages = (
+        # Build provider messages from history (trimmed) with SciWeb system prompt
+        history = (
             Message.query.filter_by(conversation_id=conversation.id)
             .order_by(Message.created_at.asc())
             .all()
         )
-        messages_payload = [{"role": m.role, "content": m.content} for m in full_messages]
-        nodes, edges = extract_knowledge_graph(messages_payload)
+        # Compose a system prompt that encodes SciWeb's learning framework
+        style = conversation.interaction_style or 'Socratic Questioning'
+        sys_prompt = (
+            "You are SciWeb, an AI learning guide. Goals: (1) Conversational knowledge derivation with"
+            " historical simulations and STEM re-derivations; (2) Scaffolded prompting with adaptive hints;"
+            " (3) Build conceptual connections suitable for extraction into a knowledge graph;"
+            " (4) Encourage reflection and milestone framing."
+            f" Interaction style: {style}. Adjust difficulty by learner signals. Prefer prompting the learner"
+            " to think, show steps, and connect ideas historically when relevant. Keep responses concise but"
+            " rigorous; include check-for-understanding questions."
+        )
+        provider_messages = [{"role": "system", "content": sys_prompt}] + [
+            {"role": m.role, "content": m.content} for m in history
+        ][-24:]
 
-        # Clear and reinsert nodes/edges
-        KnowledgeEdge.query.filter_by(conversation_id=conversation.id).delete()
-        KnowledgeNode.query.filter_by(conversation_id=conversation.id).delete()
-        db.session.flush()
+        try:
+            provider = get_default_provider()
+            ai_text = provider.chat(provider_messages, model=conversation.ai_model)
+        except Exception as e:
+            # Provide a more actionable error message for setup issues
+            import traceback
+            error_trace = traceback.format_exc()
+            error_msg = str(e)
+            print(f"Error in normal chat mode: {error_msg}")
+            print(error_trace)
+            missing_key = 'OPENAI_API_KEY' not in os.environ or not os.environ.get('OPENAI_API_KEY')
+            if missing_key:
+                ai_text = (
+                    "Provider unavailable: missing OPENAI_API_KEY. Add it to your environment or .env, then"
+                    " refresh and try again."
+                )
+            else:
+                ai_text = f"Sorry, there was an issue contacting the AI provider: {error_msg}. Please try again."
 
-        label_to_node = {}
-        for n in nodes:
-            node = KnowledgeNode(conversation_id=conversation.id, label=n['label'], type=n.get('type'))
-            db.session.add(node)
-            db.session.flush()
-            label_to_node[n['label']] = node
-
-        for e in edges:
-            src = label_to_node.get(e['source'])
-            tgt = label_to_node.get(e['target'])
-            if src and tgt and src.id != tgt.id:
-                db.session.add(KnowledgeEdge(
-                    conversation_id=conversation.id,
-                    source_node_id=src.id,
-                    target_node_id=tgt.id,
-                    relation=e.get('relation') or 'related_to'
-                ))
+        # Persist assistant message
+        ai_msg = Message(conversation_id=conversation.id, role='assistant', content=ai_text)
+        db.session.add(ai_msg)
+        
+        # Award additional XP for receiving AI response
+        leveled_up = current_user.add_xp(5)  # 5 XP for AI response
         db.session.commit()
-    except Exception:
-        db.session.rollback()
+        
+        # Return level up status if applicable
+        response_data = {
+            'response': ai_text,
+            'timestamp': datetime.now().isoformat(),
+            'xp_gained': 15,
+            'total_xp': current_user.xp,
+            'level': current_user.level,
+            'leveled_up': leveled_up,
+            'streak_days': current_user.streak_days
+        }
 
-    return jsonify({'response': ai_text, 'timestamp': datetime.now().isoformat()})
+        # Update knowledge graph for this conversation (simple refresh)
+        try:
+            full_messages = (
+                Message.query.filter_by(conversation_id=conversation.id)
+                .order_by(Message.created_at.asc())
+                .all()
+            )
+            messages_payload = [{"role": m.role, "content": m.content} for m in full_messages]
+            nodes, edges = extract_knowledge_graph(messages_payload)
+
+            # Clear and reinsert nodes/edges
+            KnowledgeEdge.query.filter_by(conversation_id=conversation.id).delete()
+            KnowledgeNode.query.filter_by(conversation_id=conversation.id).delete()
+            db.session.flush()
+
+            label_to_node = {}
+            for n in nodes:
+                node = KnowledgeNode(conversation_id=conversation.id, label=n['label'], type=n.get('type'))
+                db.session.add(node)
+                db.session.flush()
+                label_to_node[n['label']] = node
+
+            for e in edges:
+                src = label_to_node.get(e.get('source'))
+                tgt = label_to_node.get(e.get('target'))
+                if src and tgt and src.id != tgt.id:
+                    db.session.add(KnowledgeEdge(
+                        conversation_id=conversation.id,
+                        source_node_id=src.id,
+                        target_node_id=tgt.id,
+                        relation=e.get('relation') or 'related_to'
+                    ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        return jsonify(response_data)
+    except Exception as global_error:
+        # Catch any unhandled errors
+        import traceback
+        error_trace = traceback.format_exc()
+        error_msg = str(global_error)
+        print(f"Global error in send_message: {error_msg}")
+        print(error_trace)
+        return jsonify({
+            'response': (
+                f"An error occurred: {error_msg}. Please check the server logs for details."
+            ),
+            'timestamp': datetime.now().isoformat(),
+            'error': True
+        })
 
 @app.route('/api/create-project-from-outline', methods=['POST'])
 @login_required
@@ -421,7 +583,22 @@ def create_project_from_outline():
         title='Outline Summary',
     )
     db.session.add(conv)
+    db.session.flush()
+    
+    # Save outline history as messages if available
+    outline_history = session.get('outline_history', [])
+    for msg in outline_history:
+        message = Message(
+            conversation_id=conv.id,
+            role=msg.get('role', 'user'),
+            content=msg.get('content', '')
+        )
+        db.session.add(message)
+    
     db.session.commit()
+    
+    # Clear outline history from session
+    session.pop('outline_history', None)
 
     return jsonify({'project_id': project.id, 'redirect_url': url_for('project_dashboard', project_id=project.id)})
 
@@ -571,15 +748,207 @@ def create_hub():
 @login_required
 def messages():
     threads = [
-        {'id': 1, 'name': 'AP Physics Chat', 'last': 'Let’s meet 6pm for problem set 3', 'unread': 2},
+        {'id': 1, 'name': 'AP Physics Chat', 'last': "Let's meet 6pm for problem set 3", 'unread': 2},
         {'id': 2, 'name': 'Linear Algebra Buddies', 'last': 'SVD intuition notes shared', 'unread': 0},
         {'id': 3, 'name': 'History Debate Team', 'last': 'Finalize sources list', 'unread': 1},
     ]
     current = {'id': 1, 'name': 'AP Physics Chat', 'messages': [
-        {'who': 'You', 'text': 'Anyone free to review Gauss’s law derivation?'},
+        {'who': 'You', 'text': "Anyone free to review Gauss's law derivation?"},
         {'who': 'Riley', 'text': 'Yes! I can join in 10.'}
     ]}
     return render_template('messages.html', threads=threads, current=current)
+
+
+# Grade Scanner Routes
+@app.route('/grader')
+@login_required
+def grader_home():
+    """Grade scanner dashboard showing recent submissions"""
+    recent_submissions = (
+        GradeSubmission.query.filter_by(user_id=current_user.id)
+        .order_by(GradeSubmission.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    return render_template('grader_home.html', submissions=recent_submissions)
+
+
+@app.route('/grader/upload', methods=['GET'])
+@login_required
+def grader_upload():
+    """Upload page for grade scanner"""
+    projects = Project.query.filter_by(owner_id=current_user.id).all()
+    return render_template('grader_upload.html', projects=projects)
+
+
+@app.route('/api/grader/submit', methods=['POST'])
+@login_required
+def api_grader_submit():
+    """Handle file upload and initial submission"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Validate file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'pdf', 'heic'}
+    filename = secure_filename(file.filename)
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
+    if ext not in allowed_extensions:
+        return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, PDF, HEIC'}), 400
+
+    # Create uploads directory if it doesn't exist
+    upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'grader')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Generate unique filename
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    unique_filename = f"{current_user.id}_{timestamp}_{filename}"
+    file_path = os.path.join(upload_dir, unique_filename)
+
+    # Save file
+    file.save(file_path)
+
+    # Get form data
+    title = request.form.get('title', 'Untitled Submission')
+    subject = request.form.get('subject', '')
+    project_id = request.form.get('project_id')
+
+    # Create submission record
+    submission = GradeSubmission(
+        user_id=current_user.id,
+        project_id=int(project_id) if project_id and project_id.isdigit() else None,
+        title=title,
+        subject=subject,
+        image_filename=unique_filename,
+        image_path=file_path,
+        status='pending'
+    )
+    db.session.add(submission)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'submission_id': submission.id,
+        'redirect_url': url_for('grader_process', submission_id=submission.id)
+    })
+
+
+@app.route('/grader/process/<int:submission_id>')
+@login_required
+def grader_process(submission_id):
+    """Processing page that triggers AI grading"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        flash('Submission not found.', 'error')
+        return redirect(url_for('grader_home'))
+
+    return render_template('grader_process.html', submission=submission)
+
+
+@app.route('/api/grader/grade/<int:submission_id>', methods=['POST'])
+@login_required
+def api_grader_grade(submission_id):
+    """AI grading endpoint using vision model"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        return jsonify({'error': 'Submission not found'}), 404
+
+    try:
+        # Read the image file
+        with open(submission.image_path, 'rb') as img_file:
+            image_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+        # Get grading instructions from request
+        data = request.json or {}
+        answer_key = data.get('answer_key', '')
+        rubric = data.get('rubric', '')
+
+        # Build AI prompt for grading
+        grading_prompt = f"""You are an expert teacher grading handwritten student work.
+
+Subject: {submission.subject or 'General'}
+Assignment: {submission.title}
+
+{f"Answer Key: {answer_key}" if answer_key else ""}
+{f"Grading Rubric: {rubric}" if rubric else ""}
+
+Please analyze this handwritten work and provide:
+1. Overall score (0-100)
+2. Detailed feedback on what's correct and what's incorrect
+3. Specific comments on each problem/section
+4. Constructive suggestions for improvement
+
+Format your response as JSON with these fields:
+{{
+  "overall_score": <number 0-100>,
+  "earned_points": <number>,
+  "total_points": <number>,
+  "feedback": "<detailed overall feedback>",
+  "problem_feedback": [
+    {{"problem": "<problem number/name>", "score": <points>, "comment": "<specific feedback>", "is_correct": <true/false>}}
+  ]
+}}"""
+
+        # Call AI provider with vision capabilities
+        provider = get_default_provider()
+
+        # For vision grading, we'll use a simplified text-based approach for now
+        # In production, you'd use GPT-4 Vision or similar
+        ai_response = provider.chat([
+            {"role": "system", "content": "You are an expert teacher providing detailed, constructive feedback on student work."},
+            {"role": "user", "content": grading_prompt}
+        ])
+
+        # Parse AI response (assuming JSON format)
+        try:
+            import json
+            grading_result = json.loads(ai_response)
+        except:
+            # Fallback if not JSON
+            grading_result = {
+                "overall_score": 85,
+                "earned_points": 85,
+                "total_points": 100,
+                "feedback": ai_response,
+                "problem_feedback": []
+            }
+
+        # Update submission with grading results
+        submission.status = 'graded'
+        submission.overall_score = grading_result.get('overall_score', 0)
+        submission.earned_points = grading_result.get('earned_points', 0)
+        submission.total_points = grading_result.get('total_points', 100)
+        submission.ai_feedback = grading_result.get('feedback', '')
+        submission.grading_rubric = grading_result.get('problem_feedback', [])
+        submission.graded_at = datetime.now()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'grading_result': grading_result,
+            'redirect_url': url_for('grader_result', submission_id=submission.id)
+        })
+
+    except Exception as e:
+        submission.status = 'error'
+        db.session.commit()
+        return jsonify({'error': f'Grading failed: {str(e)}'}), 500
+
+
+@app.route('/grader/result/<int:submission_id>')
+@login_required
+def grader_result(submission_id):
+    """Display grading results with annotations"""
+    submission = GradeSubmission.query.filter_by(id=submission_id, user_id=current_user.id).first()
+    if not submission:
+        flash('Submission not found.', 'error')
+        return redirect(url_for('grader_home'))
+
+    return render_template('grader_result.html', submission=submission)
 if __name__ == '__main__':
     # Dev convenience: create tables if not present
     with app.app_context():

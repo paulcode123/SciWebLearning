@@ -21,44 +21,44 @@
 <form id="conversationForm" style="max-width: 800px; margin: 0 auto;">
     <!-- Learning Goal & Objective -->
     <div class="card">
-        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
-            <i class="fas fa-bullseye icon" style="color: #81c784;"></i>
+        <h2 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-bullseye icon" style="color: var(--accent);"></i>
             Learning Context
         </h2>
         
         <div style="margin-bottom: 20px;">
-            <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px;">
+            <label style="display: block; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">
                 <i class="fas fa-target icon"></i>
                 Broader Learning Goal
             </label>
             <input type="text" value="{{ project.title }}" readonly 
-                   style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px; background: #f0f8f0; color: #4a7c59;">
+                   style="width: 100%; padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-secondary);">
         </div>
         
         <div>
-            <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px;">
+            <label style="display: block; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">
                 <i class="fas fa-crosshairs icon"></i>
                 Specific Objective for This Conversation
             </label>
             <textarea name="objective" rows="3" placeholder="What specific topic or skill do you want to focus on in this conversation?"
-                      style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px; resize: vertical;" required></textarea>
+                      style="width: 100%; padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; resize: vertical; background: var(--input-bg); color: var(--text-primary);" required></textarea>
         </div>
     </div>
 
     <!-- Learning Preferences -->
     <div class="card">
-        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
-            <i class="fas fa-user-cog icon" style="color: #ffb3ba;"></i>
+        <h2 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-user-cog icon" style="color: var(--accent);"></i>
             Your Learning Preferences
         </h2>
         
         <div class="grid grid-2">
             {% for pref_key, options in learning_preferences.items() %}
             <div style="margin-bottom: 20px;">
-                <label style="display: block; color: #2d5016; font-weight: 600; margin-bottom: 8px; text-transform: capitalize;">
+                <label style="display: block; color: var(--text-primary); font-weight: 600; margin-bottom: 8px; text-transform: capitalize;">
                     {{ pref_key.replace('_', ' ') }}
                 </label>
-                <select name="{{ pref_key }}" style="width: 100%; padding: 12px; border: 2px solid #c8f7c5; border-radius: 8px;">
+                <select name="{{ pref_key }}" style="width: 100%; padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
                     {% for option in options %}
                     <option value="{{ option }}">{{ option }}</option>
                     {% endfor %}
@@ -70,19 +70,19 @@
 
     <!-- Conversation Style -->
     <div class="card">
-        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
-            <i class="fas fa-theater-masks icon" style="color: #b8e6b8;"></i>
+        <h2 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-theater-masks icon" style="color: var(--accent);"></i>
             Interaction Style
         </h2>
         
         {% for category, styles in conversation_styles.items() %}
         <div style="margin-bottom: 25px;">
-            <h3 style="color: #81c784; margin-bottom: 15px; font-size: 1.1rem;">
+            <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem;">
                 {{ category }}
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
                 {% for style in styles %}
-                <label style="display: flex; align-items: center; padding: 12px; background: #f0f8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;">
+                <label style="display: flex; align-items: center; padding: 12px; background: var(--surface-hover); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid var(--border);">
                     <input type="radio" name="conversation_style" value="{{ style }}" 
                            style="margin-right: 10px;" required
                            onchange="updateStyleSelection(this)">
@@ -96,25 +96,25 @@
 
     <!-- AI Model Selection -->
     <div class="card">
-        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
-            <i class="fas fa-robot icon" style="color: #66bb6a;"></i>
+        <h2 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-robot icon" style="color: var(--accent);"></i>
             AI Model Selection
         </h2>
         
         {% for provider, models in ai_models.items() %}
         <div style="margin-bottom: 25px;">
-            <h3 style="color: #66bb6a; margin-bottom: 15px; font-size: 1.1rem; text-transform: capitalize;">
+            <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem; text-transform: capitalize;">
                 {{ provider }}
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
                 {% for model in models %}
-                <label style="display: flex; align-items: center; padding: 15px; background: #f0f8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;">
+                <label style="display: flex; align-items: center; padding: 15px; background: var(--surface-hover); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid var(--border);">
                     <input type="radio" name="ai_model" value="{{ model.id }}" 
                            style="margin-right: 10px;" required
                            onchange="updateModelSelection(this)">
                     <div>
                         <div style="font-weight: 600;">{{ model.name }}</div>
-                        <div style="font-size: 0.8rem; color: #4a7c59;">{{ model.provider }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ model.provider }}</div>
                     </div>
                 </label>
                 {% endfor %}
@@ -125,30 +125,30 @@
 
     <!-- Conversation History Summary -->
     <div class="card">
-        <h2 style="color: #2d5016; margin-bottom: 20px; display: flex; align-items: center;">
-            <i class="fas fa-history icon" style="color: #a8e6cf;"></i>
+        <h2 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center;">
+            <i class="fas fa-history icon" style="color: var(--accent);"></i>
             Conversation History Context
         </h2>
         
         {% if project.conversations %}
-        <div style="background: #f0f8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-            <p style="color: #4a7c59; margin-bottom: 10px;">
+        <div style="background: var(--surface-hover); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
+            <p style="color: var(--text-secondary); margin-bottom: 10px;">
                 <strong>Previous conversations in this project:</strong>
             </p>
             {% for conv in project.conversations %}
-            <span class="badge" style="background: linear-gradient(45deg, #a8e6cf, #c8f7c5);">
+            <span class="badge" style="background: var(--accent-light); color: var(--accent-dark);">
                 {{ conv.title }}
             </span>
             {% endfor %}
         </div>
-        <p style="color: #4a7c59; font-size: 0.9rem;">
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
             <i class="fas fa-info-circle icon"></i>
             The AI will have context from your previous conversations to provide continuity in your learning journey.
         </p>
         {% else %}
-        <div style="text-align: center; padding: 20px; background: #f0f8f0; border-radius: 8px;">
-            <i class="fas fa-star" style="color: #ffdfba; font-size: 2rem; margin-bottom: 10px;"></i>
-            <p style="color: #4a7c59;">This will be your first conversation in this project!</p>
+        <div style="text-align: center; padding: 20px; background: var(--surface-hover); border-radius: 8px; border: 1px solid var(--border);">
+            <i class="fas fa-star" style="color: var(--accent); font-size: 2rem; margin-bottom: 10px;"></i>
+            <p style="color: var(--text-secondary);">This will be your first conversation in this project!</p>
         </div>
         {% endif %}
     </div>
@@ -168,29 +168,29 @@
 function updateStyleSelection(radio) {
     // Remove selection styling from all labels
     document.querySelectorAll('input[name="conversation_style"]').forEach(input => {
-        input.parentElement.style.background = '#f0f8f0';
-        input.parentElement.style.borderColor = 'transparent';
-        input.parentElement.style.color = '#333';
+        input.parentElement.style.background = 'var(--surface-hover)';
+        input.parentElement.style.borderColor = 'var(--border)';
+        input.parentElement.style.color = 'var(--text-primary)';
     });
     
     // Add selection styling to selected label
-    radio.parentElement.style.background = 'linear-gradient(135deg, #81c784, #a8e6cf)';
-    radio.parentElement.style.color = '#2d5016';
-    radio.parentElement.style.borderColor = '#81c784';
+    radio.parentElement.style.background = 'var(--accent-light)';
+    radio.parentElement.style.color = 'var(--accent-dark)';
+    radio.parentElement.style.borderColor = 'var(--accent)';
 }
 
 function updateModelSelection(radio) {
     // Remove selection styling from all labels
     document.querySelectorAll('input[name="ai_model"]').forEach(input => {
-        input.parentElement.style.background = '#f0f8f0';
-        input.parentElement.style.borderColor = 'transparent';
-        input.parentElement.style.color = '#333';
+        input.parentElement.style.background = 'var(--surface-hover)';
+        input.parentElement.style.borderColor = 'var(--border)';
+        input.parentElement.style.color = 'var(--text-primary)';
     });
     
     // Add selection styling to selected label
-    radio.parentElement.style.background = 'linear-gradient(135deg, #66bb6a, #81c784)';
-    radio.parentElement.style.color = '#2d5016';
-    radio.parentElement.style.borderColor = '#66bb6a';
+    radio.parentElement.style.background = 'var(--accent-light)';
+    radio.parentElement.style.color = 'var(--accent-dark)';
+    radio.parentElement.style.borderColor = 'var(--accent)';
 }
 
 document.getElementById('conversationForm').addEventListener('submit', async function(e) {

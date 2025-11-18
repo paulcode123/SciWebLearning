@@ -6,19 +6,73 @@
 <div class="page-header">
     <h1 class="page-title"><i class="fas fa-door-open icon"></i> {{ room.title }}</h1>
     <p class="page-subtitle">Shared focus with timers, chat, and a whiteboard placeholder.</p>
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
         <button class="btn" onclick="window.SciwebFocus && SciwebFocus.start(25, 'Study with group')"><i class="fas fa-bullseye icon"></i> Start 25m</button>
         <button class="btn btn-secondary" onclick="window.SciwebFocus && SciwebFocus.stop()"><i class="fas fa-stop icon"></i> Stop</button>
+        <button class="btn" id="startCallBtnRoom" onclick="startVideoCall()"><i class="fas fa-video icon"></i> Start Call</button>
+        <button class="btn btn-secondary" id="endCallBtnRoom" onclick="endVideoCall()" style="display:none;"><i class="fas fa-phone-slash icon"></i> End Call</button>
     </div>
 </div>
 
+<!-- Video Call Container for Study Room -->
+<div id="videoCallContainerRoom" style="display:none; margin-bottom:16px; padding:16px; background: var(--surface-hover); border-radius:12px; border:1px solid var(--border);">
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+    <div style="position:relative;">
+      <video id="localVideoRoom" autoplay muted style="width:100%; border-radius:8px; background:#000;"></video>
+      <div style="position:absolute; bottom:8px; left:8px; padding:4px 8px; background:rgba(0,0,0,0.7); color:white; border-radius:4px; font-size:0.85rem;">You</div>
+    </div>
+    <div style="position:relative;">
+      <video id="remoteVideoRoom" autoplay style="width:100%; border-radius:8px; background:#000;"></video>
+      <div style="position:absolute; bottom:8px; left:8px; padding:4px 8px; background:rgba(0,0,0,0.7); color:white; border-radius:4px; font-size:0.85rem;">Peer</div>
+    </div>
+  </div>
+  <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+    <button class="btn btn-secondary" onclick="toggleMuteRoom()" id="muteBtnRoom"><i class="fas fa-microphone"></i> Mute</button>
+    <button class="btn btn-secondary" onclick="toggleVideoRoom()" id="videoBtnRoom"><i class="fas fa-video"></i> Video</button>
+  </div>
+</div>
+
 <div class="grid grid-2">
-    <div class="card" style="min-height: 360px;">
+    <div class="card" style="min-height: 500px;">
         <h3 style="color: var(--text-primary); margin-bottom:10px;"><i class="fas fa-chalkboard icon"></i> Whiteboard</h3>
-        <canvas id="whiteboard" width="800" height="280" style="width:100%; height:280px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px); border-radius:12px;"></canvas>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-            <button id="wbDraw" class="btn btn-secondary"><i class="fas fa-pen icon"></i> Draw</button>
-            <button id="wbClear" class="btn btn-secondary"><i class="fas fa-eraser icon"></i> Clear</button>
+        <canvas id="whiteboard" width="800" height="400" style="width:100%; height:400px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 24px); border-radius:12px; cursor: crosshair;"></canvas>
+        <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <!-- Tool Selection -->
+            <div style="display:flex; gap:4px; border:1px solid var(--border); border-radius:8px; padding:4px;">
+                <button id="wbToolDraw" class="wb-tool-btn active" data-tool="draw" title="Draw"><i class="fas fa-pen"></i></button>
+                <button id="wbToolEraser" class="wb-tool-btn" data-tool="eraser" title="Eraser"><i class="fas fa-eraser"></i></button>
+                <button id="wbToolLine" class="wb-tool-btn" data-tool="line" title="Line"><i class="fas fa-minus"></i></button>
+                <button id="wbToolRect" class="wb-tool-btn" data-tool="rect" title="Rectangle"><i class="fas fa-square"></i></button>
+                <button id="wbToolCircle" class="wb-tool-btn" data-tool="circle" title="Circle"><i class="fas fa-circle"></i></button>
+                <button id="wbToolText" class="wb-tool-btn" data-tool="text" title="Text"><i class="fas fa-font"></i></button>
+            </div>
+            <!-- Color Picker -->
+            <div style="display:flex; gap:4px; align-items:center;">
+                <label style="color: var(--text-secondary); font-size:0.9rem;">Color:</label>
+                <input type="color" id="wbColorPicker" value="#1d4ed8" style="width:40px; height:32px; border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                <div style="display:flex; gap:4px;">
+                    <button class="wb-color-btn" data-color="#1d4ed8" style="background:#1d4ed8;" title="Blue"></button>
+                    <button class="wb-color-btn" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
+                    <button class="wb-color-btn" data-color="#16a34a" style="background:#16a34a;" title="Green"></button>
+                    <button class="wb-color-btn" data-color="#ca8a04" style="background:#ca8a04;" title="Yellow"></button>
+                    <button class="wb-color-btn" data-color="#9333ea" style="background:#9333ea;" title="Purple"></button>
+                    <button class="wb-color-btn" data-color="#ea580c" style="background:#ea580c;" title="Orange"></button>
+                    <button class="wb-color-btn" data-color="#000000" style="background:#000000;" title="Black"></button>
+                    <button class="wb-color-btn" data-color="#ffffff" style="background:#ffffff; border:1px solid var(--border);" title="White"></button>
+                </div>
+            </div>
+            <!-- Brush Size -->
+            <div style="display:flex; gap:4px; align-items:center;">
+                <label style="color: var(--text-secondary); font-size:0.9rem;">Size:</label>
+                <input type="range" id="wbBrushSize" min="1" max="20" value="2" style="width:80px;">
+                <span id="wbBrushSizeDisplay" style="color: var(--text-primary); font-size:0.9rem; min-width:30px;">2px</span>
+            </div>
+            <!-- Actions -->
+            <div style="margin-left:auto; display:flex; gap:4px;">
+                <button id="wbUndo" class="btn btn-secondary" title="Undo"><i class="fas fa-undo"></i></button>
+                <button id="wbClear" class="btn btn-secondary" title="Clear All"><i class="fas fa-trash"></i></button>
+                <button id="wbDownload" class="btn btn-secondary" title="Download"><i class="fas fa-download"></i></button>
+            </div>
         </div>
     </div>
     <div class="card" style="min-height: 360px; display:flex; flex-direction:column;">
@@ -35,31 +89,245 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.wb-tool-btn {
+    padding: 8px 12px;
+    border: none;
+    background: var(--surface);
+    color: var(--text-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.wb-tool-btn:hover {
+    background: var(--surface-hover);
+}
+.wb-tool-btn.active {
+    background: var(--accent);
+    color: white;
+}
+.wb-color-btn {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.wb-color-btn:hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+}
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
-    // Simple whiteboard drawing
+    // Enhanced whiteboard with multiple tools
     const canvas = document.getElementById('whiteboard');
     const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+    if (!canvas || !ctx) return;
+    
+    let currentTool = 'draw';
+    let currentColor = '#1d4ed8';
+    let brushSize = 2;
     let drawing = false;
-    function getPos(e){
+    let startPos = null;
+    let history = [];
+    let historyStep = -1;
+    
+    // Save state for undo
+    function saveState() {
+        historyStep++;
+        if (historyStep < history.length) history = history.slice(0, historyStep);
+        history.push(canvas.toDataURL());
+        if (history.length > 20) history.shift();
+    }
+    
+    function restoreState() {
+        if (historyStep > 0) {
+            historyStep--;
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = history[historyStep];
+        }
+    }
+    
+    function getPos(e) {
         const r = canvas.getBoundingClientRect();
         const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
         const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-        return { x: x * (canvas.width / r.width), y: y * (canvas.height / r.height) };
+        return { 
+            x: x * (canvas.width / r.width), 
+            y: y * (canvas.height / r.height) 
+        };
     }
-    if (canvas && ctx) {
-        ctx.lineWidth = 2; ctx.strokeStyle = '#1d4ed8'; ctx.lineCap = 'round';
-        canvas.addEventListener('mousedown', (e)=>{ drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
-        canvas.addEventListener('mousemove', (e)=>{ if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-        document.addEventListener('mouseup', ()=> drawing = false);
-        canvas.addEventListener('touchstart', (e)=>{ drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); });
-        canvas.addEventListener('touchmove', (e)=>{ if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
-        document.addEventListener('touchend', ()=> drawing = false);
-        const clearBtn = document.getElementById('wbClear');
-        if (clearBtn) clearBtn.addEventListener('click', ()=>{ ctx.clearRect(0,0,canvas.width, canvas.height); });
-        const drawBtn = document.getElementById('wbDraw');
-        if (drawBtn) drawBtn.addEventListener('click', ()=>{ /* reserved for future modes */ });
+    
+    // Tool selection
+    document.querySelectorAll('.wb-tool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.wb-tool-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentTool = this.dataset.tool;
+            canvas.style.cursor = currentTool === 'eraser' ? 'grab' : 
+                                 currentTool === 'text' ? 'text' : 'crosshair';
+        });
+    });
+    
+    // Color selection
+    const colorPicker = document.getElementById('wbColorPicker');
+    colorPicker.addEventListener('change', (e) => {
+        currentColor = e.target.value;
+    });
+    
+    document.querySelectorAll('.wb-color-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentColor = this.dataset.color;
+            colorPicker.value = currentColor;
+        });
+    });
+    
+    // Brush size
+    const brushSizeSlider = document.getElementById('wbBrushSize');
+    const brushSizeDisplay = document.getElementById('wbBrushSizeDisplay');
+    brushSizeSlider.addEventListener('input', (e) => {
+        brushSize = parseInt(e.target.value);
+        brushSizeDisplay.textContent = brushSize + 'px';
+    });
+    
+    // Drawing functions
+    function drawLine(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
     }
+    
+    function drawRect(x1, y1, x2, y2) {
+        const w = x2 - x1;
+        const h = y2 - y1;
+        ctx.strokeRect(x1, y1, w, h);
+    }
+    
+    function drawCircle(x1, y1, x2, y2) {
+        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        ctx.beginPath();
+        ctx.arc(x1, y1, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    // Mouse/Touch events
+    function startDraw(e) {
+        drawing = true;
+        startPos = getPos(e);
+        if (currentTool === 'draw' || currentTool === 'eraser') {
+            ctx.beginPath();
+            ctx.moveTo(startPos.x, startPos.y);
+        } else if (currentTool === 'text') {
+            const text = prompt('Enter text:', '');
+            if (text) {
+                ctx.font = `${brushSize * 5}px Arial`;
+                ctx.fillStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+                ctx.fillText(text, startPos.x, startPos.y);
+                saveState();
+            }
+            drawing = false;
+        } else {
+            saveState();
+        }
+    }
+    
+    function draw(e) {
+        if (!drawing) return;
+        const pos = getPos(e);
+        
+        if (currentTool === 'draw') {
+            ctx.lineWidth = brushSize;
+            ctx.strokeStyle = currentColor;
+            ctx.lineCap = 'round';
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        } else if (currentTool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = brushSize * 2;
+            ctx.lineCap = 'round';
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.globalCompositeOperation = 'source-over';
+        } else if (currentTool === 'line' && startPos) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (historyStep >= 0) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = history[historyStep];
+            }
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            drawLine(startPos.x, startPos.y, pos.x, pos.y);
+        } else if (currentTool === 'rect' && startPos) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (historyStep >= 0) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = history[historyStep];
+            }
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            drawRect(startPos.x, startPos.y, pos.x, pos.y);
+        } else if (currentTool === 'circle' && startPos) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (historyStep >= 0) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = history[historyStep];
+            }
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            drawCircle(startPos.x, startPos.y, pos.x, pos.y);
+        }
+    }
+    
+    function endDraw() {
+        if (drawing && (currentTool === 'draw' || currentTool === 'eraser' || 
+            currentTool === 'line' || currentTool === 'rect' || currentTool === 'circle')) {
+            saveState();
+        }
+        drawing = false;
+        startPos = null;
+    }
+    
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(); });
+    
+    // Buttons
+    document.getElementById('wbUndo')?.addEventListener('click', restoreState);
+    document.getElementById('wbClear')?.addEventListener('click', () => {
+        if (confirm('Clear entire whiteboard?')) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveState();
+        }
+    });
+    document.getElementById('wbDownload')?.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = 'whiteboard-' + Date.now() + '.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+    
+    // Initialize
+    saveState();
+    
+    // Chat functionality
     const chatLog = document.getElementById('chatLog');
     const input = document.getElementById('chatInput');
     const send = document.getElementById('chatSend');
@@ -69,7 +337,113 @@ document.addEventListener('DOMContentLoaded', function(){
         p.style.margin = '6px 0'; p.style.color = 'var(--text-primary)';
         chatLog.appendChild(p); chatLog.scrollTop = chatLog.scrollHeight;
     }
-    if (send) send.addEventListener('click', function(){ if (!input.value) return; append('You: '+input.value); input.value=''; });
+    if (send) send.addEventListener('click', function(){ 
+        if (!input.value) return; 
+        append('You: '+input.value); 
+        input.value=''; 
+    });
+    if (input) input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            send.click();
+        }
+    });
+    
+    // Video call functionality for study room
+    let localStreamRoom = null;
+    let peerConnectionRoom = null;
+    let isMutedRoom = false;
+    let isVideoOffRoom = false;
+    
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+    
+    window.startVideoCall = async function() {
+      try {
+        localStreamRoom = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: true 
+        });
+        
+        const localVideo = document.getElementById('localVideoRoom');
+        const remoteVideo = document.getElementById('remoteVideoRoom');
+        const videoContainer = document.getElementById('videoCallContainerRoom');
+        const startBtn = document.getElementById('startCallBtnRoom');
+        const endBtn = document.getElementById('endCallBtnRoom');
+        
+        localVideo.srcObject = localStreamRoom;
+        videoContainer.style.display = 'block';
+        startBtn.style.display = 'none';
+        endBtn.style.display = 'inline-block';
+        
+        peerConnectionRoom = new RTCPeerConnection(configuration);
+        localStreamRoom.getTracks().forEach(track => {
+          peerConnectionRoom.addTrack(track, localStreamRoom);
+        });
+        
+        peerConnectionRoom.ontrack = (event) => {
+          remoteVideo.srcObject = event.streams[0];
+        };
+        
+        const offer = await peerConnectionRoom.createOffer();
+        await peerConnectionRoom.setLocalDescription(offer);
+        console.log('Call started in study room!');
+        
+      } catch (error) {
+        console.error('Error starting video call:', error);
+        alert('Could not access camera/microphone. Please check permissions.');
+      }
+    };
+    
+    window.endVideoCall = function() {
+      if (localStreamRoom) {
+        localStreamRoom.getTracks().forEach(track => track.stop());
+        localStreamRoom = null;
+      }
+      if (peerConnectionRoom) {
+        peerConnectionRoom.close();
+        peerConnectionRoom = null;
+      }
+      const localVideo = document.getElementById('localVideoRoom');
+      const remoteVideo = document.getElementById('remoteVideoRoom');
+      const videoContainer = document.getElementById('videoCallContainerRoom');
+      const startBtn = document.getElementById('startCallBtnRoom');
+      const endBtn = document.getElementById('endCallBtnRoom');
+      localVideo.srcObject = null;
+      remoteVideo.srcObject = null;
+      videoContainer.style.display = 'none';
+      startBtn.style.display = 'inline-block';
+      endBtn.style.display = 'none';
+    };
+    
+    window.toggleMuteRoom = function() {
+      if (localStreamRoom) {
+        const audioTracks = localStreamRoom.getAudioTracks();
+        audioTracks.forEach(track => {
+          track.enabled = isMutedRoom;
+        });
+        isMutedRoom = !isMutedRoom;
+        document.getElementById('muteBtnRoom').innerHTML = isMutedRoom 
+          ? '<i class="fas fa-microphone-slash"></i> Unmute'
+          : '<i class="fas fa-microphone"></i> Mute';
+      }
+    };
+    
+    window.toggleVideoRoom = function() {
+      if (localStreamRoom) {
+        const videoTracks = localStreamRoom.getVideoTracks();
+        videoTracks.forEach(track => {
+          track.enabled = isVideoOffRoom;
+        });
+        isVideoOffRoom = !isVideoOffRoom;
+        document.getElementById('videoBtnRoom').innerHTML = isVideoOffRoom
+          ? '<i class="fas fa-video-slash"></i> Show Video'
+          : '<i class="fas fa-video"></i> Hide Video';
+      }
+    };
 });
 </script>
 {% endblock %}
