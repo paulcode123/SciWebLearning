@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Style Options - SciWeb{% endblock %}
+
+{% block content %}
+<div class="back-nav">
+    <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+</div>
+
+<div class="page-header" style="margin-bottom: 30px; text-align: center;">
+    <h1 class="page-title">
+        <i class="fas fa-palette icon"></i>
+        Style Options
+    </h1>
+    <p class="page-subtitle">Customize your SciWeb experience</p>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card" style="margin-bottom: 20px;">
+        <h2 style="margin-bottom: 15px; color: var(--text-primary);">Theme</h2>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button id="lightThemeBtn" class="btn" style="flex: 1; min-width: 150px;">
+                <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button id="darkThemeBtn" class="btn btn-secondary" style="flex: 1; min-width: 150px;">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h2 style="margin-bottom: 15px; color: var(--text-primary);">Display Preferences</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="focusModeToggle" style="width: 20px; height: 20px; cursor: pointer;">
+                <span style="color: var(--text-primary);">Focus Mode (minimal distractions)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="animationsToggle" checked style="width: 20px; height: 20px; cursor: pointer;">
+                <span style="color: var(--text-primary);">Enable animations</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-bottom: 15px; color: var(--text-primary);">Font Size</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="range" id="fontSizeSlider" min="12" max="18" value="16" style="flex: 1; cursor: pointer;">
+            <span id="fontSizeValue" style="min-width: 50px; text-align: center; color: var(--text-primary);">16px</span>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Theme buttons
+    const lightThemeBtn = document.getElementById('lightThemeBtn');
+    const darkThemeBtn = document.getElementById('darkThemeBtn');
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    if (currentTheme === 'dark') {
+        darkThemeBtn.classList.add('btn');
+        darkThemeBtn.classList.remove('btn-secondary');
+        lightThemeBtn.classList.add('btn-secondary');
+        lightThemeBtn.classList.remove('btn');
+    }
+    
+    lightThemeBtn.addEventListener('click', function() {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        lightThemeBtn.classList.add('btn');
+        lightThemeBtn.classList.remove('btn-secondary');
+        darkThemeBtn.classList.add('btn-secondary');
+        darkThemeBtn.classList.remove('btn');
+    });
+    
+    darkThemeBtn.addEventListener('click', function() {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        darkThemeBtn.classList.add('btn');
+        darkThemeBtn.classList.remove('btn-secondary');
+        lightThemeBtn.classList.add('btn-secondary');
+        lightThemeBtn.classList.remove('btn');
+    });
+    
+    // Focus mode toggle
+    const focusModeToggle = document.getElementById('focusModeToggle');
+    const savedFocusMode = localStorage.getItem('focusMode') === 'true';
+    focusModeToggle.checked = savedFocusMode;
+    
+    focusModeToggle.addEventListener('change', function() {
+        localStorage.setItem('focusMode', this.checked);
+        if (this.checked) {
+            document.body.classList.add('focus-mode');
+        } else {
+            document.body.classList.remove('focus-mode');
+        }
+    });
+    
+    if (savedFocusMode) {
+        document.body.classList.add('focus-mode');
+    }
+    
+    // Animations toggle
+    const animationsToggle = document.getElementById('animationsToggle');
+    const savedAnimations = localStorage.getItem('animations') !== 'false';
+    animationsToggle.checked = savedAnimations;
+    
+    animationsToggle.addEventListener('change', function() {
+        localStorage.setItem('animations', this.checked);
+        if (!this.checked) {
+            document.body.style.setProperty('--animation-duration', '0s');
+        } else {
+            document.body.style.removeProperty('--animation-duration');
+        }
+    });
+    
+    // Font size slider
+    const fontSizeSlider = document.getElementById('fontSizeSlider');
+    const fontSizeValue = document.getElementById('fontSizeValue');
+    const savedFontSize = localStorage.getItem('fontSize') || '16';
+    fontSizeSlider.value = savedFontSize;
+    fontSizeValue.textContent = savedFontSize + 'px';
+    document.documentElement.style.fontSize = savedFontSize + 'px';
+    
+    fontSizeSlider.addEventListener('input', function() {
+        const size = this.value + 'px';
+        fontSizeValue.textContent = size;
+        document.documentElement.style.fontSize = size;
+        localStorage.setItem('fontSize', this.value);
+    });
+});
+</script>
+
+<style>
+.focus-mode .spider-agent,
+.focus-mode .floating-action-button {
+    display: none !important;
+}
+</style>
+{% endblock %}
+

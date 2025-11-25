@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.title }} - {{ module.title }}{% endblock %}
+
+{% block content %}
+<style>
+.lesson-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.lesson-header {
+    background: linear-gradient(135deg, {{ module.color }}, {{ module.color }}dd);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+    box-shadow: var(--shadow-lg);
+}
+
+.lesson-progress-bar {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    height: 8px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.lesson-progress-fill {
+    background: white;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.lesson-content {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+.lesson-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.btn-complete {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-complete:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary-action {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lesson-meta-info {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.completion-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+</style>
+
+<div class="back-nav">
+    <a href="{{ url_for('dashboard') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+</div>
+
+<div class="lesson-container">
+    <div class="lesson-header">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+            <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                <i class="fas fa-{{ module.icon }}"></i>
+            </div>
+            <div style="flex: 1;">
+                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 700;">{{ lesson.title }}</h1>
+                <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 1rem;">{{ module.title }}</p>
+            </div>
+        </div>
+        
+        <div class="lesson-progress-bar">
+            <div class="lesson-progress-fill" style="width: {{ progress.completion_percentage }}%;"></div>
+        </div>
+        
+        <div class="lesson-meta-info">
+            <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ lesson.estimated_minutes }} minutes</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-bolt"></i>
+                <span>{{ lesson.xp_reward }} XP</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-{{ 'check-circle' if progress.is_completed else 'circle' }}"></i>
+                <span>{{ 'Completed' if progress.is_completed else (progress.completion_percentage | int) ~ '% Complete' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="lesson-content markdown-content">
+        {% if lesson.description %}
+        <div style="background: var(--accent-light); padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--accent);">
+            <p style="margin: 0; color: var(--text-primary); font-weight: 500;">{{ lesson.description }}</p>
+        </div>
+        {% endif %}
+        
+        <div id="lessonContent">
+            {{ lesson.content | safe }}
+        </div>
+    </div>
+    
+    <div class="lesson-actions">
+        {% if not progress.is_completed %}
+        <button class="btn-complete" onclick="completeLesson()">
+            <i class="fas fa-check-circle"></i> Complete Lesson
+        </button>
+        {% else %}
+        <div class="completion-badge" style="background: var(--accent-light); color: var(--accent-dark); padding: 14px 32px; border-radius: 12px;">
+            <i class="fas fa-check-circle"></i> Lesson Completed!
+        </div>
+        {% endif %}
+        <a href="{{ url_for('dashboard') }}" class="btn-secondary-action">
+            <i class="fas fa-home"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+// MathJax rendering for lesson content
+if (window.MathJax) {
+    setTimeout(() => {
+        MathJax.typesetPromise([document.getElementById('lessonContent')]).catch(err => {
+            console.error('MathJax error:', err);
+        });
+    }, 100);
+}
+
+function completeLesson() {
+    const btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Completing...';
+    
+    axios.post('/api/lesson/complete', {
+        lesson_id: {{ lesson.id }},
+        score: 100
+    }).then(response => {
+        if (response.data.success) {
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); padding:32px; background:linear-gradient(135deg, var(--accent), var(--accent-hover)); color:white; border-radius:20px; z-index:10001; text-align:center; box-shadow:var(--shadow-lg);';
+            notification.innerHTML = `
+                <div style="font-size:3rem; margin-bottom:16px;">🎉</div>
+                <div style="font-size:1.5rem; font-weight:bold; margin-bottom:8px;">Lesson Complete!</div>
+                <div style="font-size:1.1rem; opacity:0.9;">+{{ lesson.xp_reward }} XP earned</div>
+                ${response.data.leveled_up ? '<div style="margin-top:16px; font-size:1.2rem; font-weight:bold;">Level Up! You reached Level ' + response.data.level + '!</div>' : ''}
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transition = 'opacity 0.3s';
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+                // Reload page to show updated progress
+                setTimeout(() => window.location.reload(), 500);
+            }, 2000);
+        }
+    }).catch(error => {
+        console.error('Error completing lesson:', error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Complete Lesson';
+        alert('Error completing lesson. Please try again.');
+    });
+}
+
+// Update progress as user scrolls/interacts
+let lastProgressUpdate = {{ progress.completion_percentage }};
+window.addEventListener('scroll', function() {
+    const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    const newProgress = Math.max(lastProgressUpdate, Math.min(100, scrollPercent));
+    
+    if (newProgress > lastProgressUpdate + 5) { // Update every 5%
+        lastProgressUpdate = newProgress;
+        axios.post('/api/lesson/progress', {
+            lesson_id: {{ lesson.id }},
+            completion: newProgress
+        }).then(() => {
+            document.querySelector('.lesson-progress-fill').style.width = newProgress + '%';
+        });
+    }
+});
+</script>
+{% endblock %}
+

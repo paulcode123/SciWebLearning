@@ -138,3 +138,60 @@ class GradeSubmission(db.Model):
     user = db.relationship('User', backref='grade_submissions', lazy=True)
     project = db.relationship('Project', backref='grade_submissions', lazy=True)
 
+
+class LearningModule(db.Model):
+    """Duolingo-style learning modules organized by topic"""
+    __tablename__ = 'learning_modules'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    subject = db.Column(db.String(120), nullable=False)  # e.g., "Physics", "Calculus", "Python"
+    difficulty = db.Column(db.String(50), default='Beginner', nullable=False)
+    icon = db.Column(db.String(50), default='book', nullable=False)  # FontAwesome icon name
+    color = db.Column(db.String(20), default='#6366f1', nullable=False)  # Module color
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    order_index = db.Column(db.Integer, default=0, nullable=False)  # For ordering modules
+    
+    lessons = db.relationship('DailyLesson', backref='module', lazy=True, cascade='all, delete-orphan', order_by='DailyLesson.order_index')
+    user = db.relationship('User', backref='learning_modules', lazy=True)
+
+
+class DailyLesson(db.Model):
+    """Individual lessons within a module (like Duolingo's daily lessons)"""
+    __tablename__ = 'daily_lessons'
+
+    id = db.Column(db.Integer, primary_key=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('learning_modules.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    content = db.Column(db.Text, nullable=False)  # Lesson content/instructions
+    lesson_type = db.Column(db.String(50), default='interactive', nullable=False)  # interactive, quiz, practice, review
+    order_index = db.Column(db.Integer, default=0, nullable=False)
+    xp_reward = db.Column(db.Integer, default=20, nullable=False)  # XP gained on completion
+    estimated_minutes = db.Column(db.Integer, default=10, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    is_unlocked = db.Column(db.Boolean, default=False, nullable=False)
+    
+    progress = db.relationship('LessonProgress', backref='lesson', lazy=True, uselist=False)
+
+
+class LessonProgress(db.Model):
+    """Track user progress on individual lessons"""
+    __tablename__ = 'lesson_progress'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('daily_lessons.id'), nullable=False, unique=True)
+    completion_percentage = db.Column(db.Float, default=0.0, nullable=False)  # 0-100
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    best_score = db.Column(db.Float, nullable=True)  # Best score achieved (0-100)
+    started_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    last_accessed = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    user = db.relationship('User', backref='lesson_progress', lazy=True)
+

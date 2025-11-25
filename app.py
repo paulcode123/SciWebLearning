@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import (
     LoginManager,
@@ -14,7 +14,7 @@ from flask_migrate import Migrate
 
 from config import DevelopmentConfig, ProductionConfig
 from dotenv import load_dotenv
-from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge, GradeSubmission
+from models import db, User, Project, Conversation, Message, KnowledgeNode, KnowledgeEdge, GradeSubmission, LearningModule, DailyLesson, LessonProgress
 from chat_providers import get_default_provider
 from kg import extract_knowledge_graph
 from werkzeug.utils import secure_filename
@@ -159,13 +159,212 @@ learning_preferences = {
 @app.route('/')
 @login_required
 def dashboard():
-    """Main learning dashboard showing all projects"""
+    """Duolingo-style learning dashboard with daily modules"""
+    # Get or create default learning modules for the user
+    modules = LearningModule.query.filter_by(user_id=current_user.id, is_active=True).order_by(LearningModule.order_index).all()
+    
+    # If no modules exist, create default ones
+    if not modules:
+        default_modules = [
+            {'title': 'Physics Fundamentals', 'subject': 'Physics', 'icon': 'atom', 'color': '#ef4444', 'description': 'Master the basics of mechanics, energy, and motion'},
+            {'title': 'Calculus Essentials', 'subject': 'Mathematics', 'icon': 'function', 'color': '#3b82f6', 'description': 'Learn derivatives, integrals, and limits'},
+            {'title': 'Python Programming', 'subject': 'Computer Science', 'icon': 'code', 'color': '#10b981', 'description': 'Build programming skills from scratch'},
+            {'title': 'Chemistry Basics', 'subject': 'Chemistry', 'icon': 'flask', 'color': '#f59e0b', 'description': 'Understand atoms, molecules, and reactions'},
+        ]
+        for idx, mod_data in enumerate(default_modules):
+            module = LearningModule(
+                user_id=current_user.id,
+                title=mod_data['title'],
+                subject=mod_data['subject'],
+                icon=mod_data['icon'],
+                color=mod_data['color'],
+                description=mod_data['description'],
+                order_index=idx,
+                difficulty='Beginner'
+            )
+            db.session.add(module)
+        db.session.commit()
+        modules = LearningModule.query.filter_by(user_id=current_user.id, is_active=True).order_by(LearningModule.order_index).all()
+    
+    # Get today's lesson for each module
+    today = date.today()
+    modules_with_lessons = []
+    for module in modules:
+        # Get today's lesson or create one
+        today_lesson = DailyLesson.query.filter_by(module_id=module.id).filter(
+            DailyLesson.created_at >= datetime.combine(today, datetime.min.time())
+        ).first()
+        
+        if not today_lesson:
+            # Generate today's lesson
+            today_lesson = generate_daily_lesson(module, current_user)
+        
+        # Get progress
+        progress = LessonProgress.query.filter_by(user_id=current_user.id, lesson_id=today_lesson.id).first()
+        if not progress:
+            progress = LessonProgress(user_id=current_user.id, lesson_id=today_lesson.id)
+            db.session.add(progress)
+            db.session.commit()
+        
+        # Calculate module completion
+        all_lessons = DailyLesson.query.filter_by(module_id=module.id).all()
+        completed_lessons = sum(1 for l in all_lessons 
+                                if LessonProgress.query.filter_by(user_id=current_user.id, lesson_id=l.id, is_completed=True).first())
+        module_completion = (completed_lessons / len(all_lessons) * 100) if all_lessons else 0
+        
+        modules_with_lessons.append({
+            'module': module,
+            'today_lesson': today_lesson,
+            'progress': progress,
+            'completion': module_completion
+        })
+    
+    # Calculate daily goal progress
+    daily_xp_goal = 50
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+    
+    # Calculate today's XP from completed lessons
+    today_lessons = DailyLesson.query.join(LessonProgress).filter(
+        LessonProgress.user_id == current_user.id,
+        LessonProgress.is_completed == True,
+        LessonProgress.completed_at >= today_start
+    ).all()
+    today_xp = sum(lesson.xp_reward for lesson in today_lessons)
+    
+    # Get user stats
+    user_stats = {
+        'xp': current_user.xp,
+        'level': current_user.level,
+        'streak_days': current_user.streak_days,
+        'daily_xp': today_xp,
+        'daily_goal': daily_xp_goal
+    }
+    
+    # Get projects for the projects section
     projects = (
         Project.query.filter_by(owner_id=current_user.id)
         .order_by(Project.id.desc())
+        .limit(6)
         .all()
     )
-    return render_template('dashboard.html', projects=projects)
+    
+    return render_template('dashboard.html', 
+                         modules_with_lessons=modules_with_lessons,
+                         user_stats=user_stats,
+                         projects=projects)
+
+
+def generate_daily_lesson(module, user):
+    """Generate a daily lesson for a module using AI"""
+    from chat_providers import get_default_provider
+    
+    # Get previous lessons to avoid repetition
+    previous_lessons = DailyLesson.query.filter_by(module_id=module.id).order_by(DailyLesson.created_at.desc()).limit(5).all()
+    previous_topics = [l.title for l in previous_lessons]
+    
+    # Generate lesson content using AI
+    provider = get_default_provider()
+    system_prompt = f"""You are a learning module generator for SciWeb. Create a daily lesson for the module "{module.title}" in {module.subject}.
+
+Module description: {module.description}
+Difficulty: {module.difficulty}
+
+Previous lesson topics: {', '.join(previous_topics) if previous_topics else 'None'}
+
+Generate a new lesson that:
+1. Builds on previous knowledge but introduces new concepts
+2. Is appropriate for {module.difficulty} level
+3. Takes about 10 minutes to complete
+4. Is interactive and engaging
+5. Includes clear learning objectives
+
+Return a JSON object with:
+- "title": Lesson title (max 60 chars)
+- "description": Brief description (1-2 sentences)
+- "content": Detailed lesson content with interactive elements
+- "lesson_type": One of: interactive, quiz, practice, review
+- "learning_objectives": Array of 2-3 learning objectives
+
+Format your response as valid JSON only."""
+    
+    try:
+        if provider and provider._has_key:
+            response = provider.chat([{"role": "system", "content": system_prompt}, 
+                                     {"role": "user", "content": f"Generate today's lesson for {module.title}"}],
+                                    model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'))
+            
+            # Parse JSON response
+            import json
+            import re
+            # Extract JSON from response
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                lesson_data = json.loads(json_match.group())
+                # Ensure content is a string, not a dict
+                if isinstance(lesson_data.get('content'), dict):
+                    # If content is a dict, convert it to a formatted string
+                    content_parts = []
+                    for key, value in lesson_data['content'].items():
+                        content_parts.append(f"## {key.title()}\n\n{value}")
+                    lesson_data['content'] = '\n\n'.join(content_parts)
+                elif not isinstance(lesson_data.get('content'), str):
+                    # If content is not a string, convert it
+                    lesson_data['content'] = str(lesson_data.get('content', ''))
+            else:
+                # Fallback if JSON parsing fails
+                lesson_data = {
+                    'title': f'{module.subject} Practice',
+                    'description': f'Continue learning {module.subject}',
+                    'content': response[:500] if isinstance(response, str) else str(response)[:500],
+                    'lesson_type': 'interactive',
+                    'learning_objectives': ['Master key concepts', 'Apply knowledge']
+                }
+        else:
+            # Fallback lesson
+            lesson_data = {
+                'title': f'{module.subject} Practice',
+                'description': f'Continue learning {module.subject}',
+                'content': f'Today we will explore key concepts in {module.subject}. This interactive lesson will help you build your understanding step by step.',
+                'lesson_type': 'interactive',
+                'learning_objectives': ['Master key concepts', 'Apply knowledge']
+            }
+    except Exception as e:
+        print(f"Error generating lesson: {e}")
+        lesson_data = {
+            'title': f'{module.subject} Practice',
+            'description': f'Continue learning {module.subject}',
+            'content': f'Today we will explore key concepts in {module.subject}.',
+            'lesson_type': 'interactive',
+            'learning_objectives': ['Master key concepts']
+        }
+    
+    # Create the lesson - ensure content is a string
+    content = lesson_data.get('content', '')
+    if not isinstance(content, str):
+        if isinstance(content, dict):
+            # Convert dict to formatted string
+            content_parts = []
+            for key, value in content.items():
+                content_parts.append(f"## {key.title()}\n\n{value}")
+            content = '\n\n'.join(content_parts)
+        else:
+            content = str(content)
+    
+    lesson = DailyLesson(
+        module_id=module.id,
+        title=lesson_data.get('title', f'{module.subject} Lesson'),
+        description=lesson_data.get('description', ''),
+        content=content,
+        lesson_type=lesson_data.get('lesson_type', 'interactive'),
+        xp_reward=20,
+        estimated_minutes=10,
+        is_unlocked=True
+    )
+    db.session.add(lesson)
+    db.session.commit()
+    
+    return lesson
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -738,6 +937,112 @@ def create_hub():
         {'id': 'notes', 'title': 'Collaborative Notes', 'desc': 'Co-edit notes with classmates.'},
     ]
     return render_template('create_hub.html', tools=tools)
+
+
+@app.route('/style')
+@login_required
+def style():
+    """Style options page for customizing UI preferences"""
+    return render_template('style_options.html')
+
+
+@app.route('/lesson/<int:lesson_id>')
+@login_required
+def lesson_view(lesson_id):
+    """View and complete a daily lesson"""
+    lesson = DailyLesson.query.get_or_404(lesson_id)
+    module = lesson.module
+    
+    # Verify user owns the module
+    if module.user_id != current_user.id:
+        flash('You do not have access to this lesson.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get or create progress
+    progress = LessonProgress.query.filter_by(user_id=current_user.id, lesson_id=lesson_id).first()
+    if not progress:
+        progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id, started_at=datetime.utcnow())
+        db.session.add(progress)
+        db.session.commit()
+    elif not progress.started_at:
+        progress.started_at = datetime.utcnow()
+        db.session.commit()
+    
+    return render_template('lesson_view.html', lesson=lesson, module=module, progress=progress)
+
+
+@app.route('/api/lesson/complete', methods=['POST'])
+@login_required
+def complete_lesson():
+    """Mark a lesson as completed and award XP"""
+    data = request.json or {}
+    lesson_id = data.get('lesson_id')
+    score = data.get('score', 100)  # Default to 100% if not provided
+    
+    if not lesson_id:
+        return jsonify({'error': 'lesson_id required'}), 400
+    
+    lesson = DailyLesson.query.get_or_404(lesson_id)
+    if lesson.module.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Update progress
+    progress = LessonProgress.query.filter_by(user_id=current_user.id, lesson_id=lesson_id).first()
+    if not progress:
+        progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id)
+        db.session.add(progress)
+    
+    progress.completion_percentage = min(100.0, float(score))
+    progress.is_completed = progress.completion_percentage >= 80.0  # 80% to complete
+    progress.attempts += 1
+    if float(score) > (progress.best_score or 0):
+        progress.best_score = float(score)
+    
+    if progress.is_completed and not progress.completed_at:
+        progress.completed_at = datetime.utcnow()
+        # Award XP
+        current_user.update_streak()
+        leveled_up = current_user.add_xp(lesson.xp_reward)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'xp_gained': lesson.xp_reward,
+            'total_xp': current_user.xp,
+            'level': current_user.level,
+            'leveled_up': leveled_up,
+            'streak_days': current_user.streak_days
+        })
+    
+    db.session.commit()
+    return jsonify({'success': True, 'progress': progress.completion_percentage})
+
+
+@app.route('/api/lesson/progress', methods=['POST'])
+@login_required
+def update_lesson_progress():
+    """Update lesson progress without completing"""
+    data = request.json or {}
+    lesson_id = data.get('lesson_id')
+    completion = data.get('completion', 0)  # 0-100
+    
+    if not lesson_id:
+        return jsonify({'error': 'lesson_id required'}), 400
+    
+    lesson = DailyLesson.query.get_or_404(lesson_id)
+    if lesson.module.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    progress = LessonProgress.query.filter_by(user_id=current_user.id, lesson_id=lesson_id).first()
+    if not progress:
+        progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id, started_at=datetime.utcnow())
+        db.session.add(progress)
+    
+    progress.completion_percentage = min(100.0, max(0.0, float(completion)))
+    progress.last_accessed = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'completion': progress.completion_percentage})
 
 
 @app.route('/messages')
